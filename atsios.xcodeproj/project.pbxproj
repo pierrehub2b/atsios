@@ -10,13 +10,13 @@
 		047BFA6822F178D700BB2E25 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 047BFA6722F178D700BB2E25 /* AppDelegate.swift */; };
 		047BFA6A22F178D700BB2E25 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 047BFA6922F178D700BB2E25 /* ViewController.swift */; };
 		047BFA6D22F178D700BB2E25 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 047BFA6B22F178D700BB2E25 /* Main.storyboard */; };
-		047BFA7022F178D700BB2E25 /* agilitest_iosDriver.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 047BFA6E22F178D700BB2E25 /* agilitest_iosDriver.xcdatamodeld */; };
+		047BFA7022F178D700BB2E25 /* atsios.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 047BFA6E22F178D700BB2E25 /* atsios.xcdatamodeld */; };
 		047BFA7222F178D800BB2E25 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 047BFA7122F178D800BB2E25 /* Assets.xcassets */; };
 		047BFA7522F178D800BB2E25 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 047BFA7322F178D800BB2E25 /* LaunchScreen.storyboard */; };
-		047BFA8022F178D800BB2E25 /* agilitest_iosDriverUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 047BFA7F22F178D800BB2E25 /* agilitest_iosDriverUITests.swift */; };
+		047BFA8022F178D800BB2E25 /* atsiosUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 047BFA7F22F178D800BB2E25 /* atsiosUITests.swift */; };
 		04FB981022F17BC500D2B564 /* libEmbassy.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 04FB980F22F17BC500D2B564 /* libEmbassy.a */; };
 		04FB981222F17BC500D2B564 /* libEnvoyAmbassador.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 04FB981122F17BC500D2B564 /* libEnvoyAmbassador.a */; };
-		05EAA9410E7F35D17BA7DB54 /* libPods-agilitest_iosDriverUITests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 78126EC78CCE714AECFF6B63 /* libPods-agilitest_iosDriverUITests.a */; };
+		B838CAF2ACFF0346AFC747BC /* libPods-atsiosUITests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C0D8CE06F7ACBB16A5BDF271 /* libPods-atsiosUITests.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -30,7 +30,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		047BFA6422F178D700BB2E25 /* agilitest_iosDriver.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = agilitest_iosDriver.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		047BFA6422F178D700BB2E25 /* atsios.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = atsios.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		047BFA6722F178D700BB2E25 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		047BFA6922F178D700BB2E25 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
 		047BFA6C22F178D700BB2E25 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
@@ -38,15 +38,15 @@
 		047BFA7122F178D800BB2E25 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		047BFA7422F178D800BB2E25 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		047BFA7622F178D800BB2E25 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		047BFA7B22F178D800BB2E25 /* agilitest_iosDriverUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = agilitest_iosDriverUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		047BFA7F22F178D800BB2E25 /* agilitest_iosDriverUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = agilitest_iosDriverUITests.swift; sourceTree = "<group>"; };
+		047BFA7B22F178D800BB2E25 /* atsiosUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = atsiosUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		047BFA7F22F178D800BB2E25 /* atsiosUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = atsiosUITests.swift; sourceTree = "<group>"; };
 		047BFA8122F178D800BB2E25 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		049922E322F2F30500A53078 /* libSwiftyJSON.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libSwiftyJSON.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		04FB980F22F17BC500D2B564 /* libEmbassy.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libEmbassy.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		04FB981122F17BC500D2B564 /* libEnvoyAmbassador.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libEnvoyAmbassador.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		3B97D02C32185D6B17C4C264 /* Pods-agilitest_iosDriverUITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-agilitest_iosDriverUITests.debug.xcconfig"; path = "Target Support Files/Pods-agilitest_iosDriverUITests/Pods-agilitest_iosDriverUITests.debug.xcconfig"; sourceTree = "<group>"; };
-		61439A76FF1AF60C5E954422 /* Pods-agilitest_iosDriverUITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-agilitest_iosDriverUITests.release.xcconfig"; path = "Target Support Files/Pods-agilitest_iosDriverUITests/Pods-agilitest_iosDriverUITests.release.xcconfig"; sourceTree = "<group>"; };
-		78126EC78CCE714AECFF6B63 /* libPods-agilitest_iosDriverUITests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-agilitest_iosDriverUITests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		5678C43C43C84FCACF81C48D /* Pods-atsiosUITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-atsiosUITests.release.xcconfig"; path = "Target Support Files/Pods-atsiosUITests/Pods-atsiosUITests.release.xcconfig"; sourceTree = "<group>"; };
+		C0D8CE06F7ACBB16A5BDF271 /* libPods-atsiosUITests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-atsiosUITests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		CF14D7879408BF914F82B665 /* Pods-atsiosUITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-atsiosUITests.debug.xcconfig"; path = "Target Support Files/Pods-atsiosUITests/Pods-atsiosUITests.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -63,7 +63,7 @@
 			files = (
 				04FB981022F17BC500D2B564 /* libEmbassy.a in Frameworks */,
 				04FB981222F17BC500D2B564 /* libEnvoyAmbassador.a in Frameworks */,
-				05EAA9410E7F35D17BA7DB54 /* libPods-agilitest_iosDriverUITests.a in Frameworks */,
+				B838CAF2ACFF0346AFC747BC /* libPods-atsiosUITests.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -73,8 +73,8 @@
 		047BFA5B22F178D700BB2E25 = {
 			isa = PBXGroup;
 			children = (
-				047BFA6622F178D700BB2E25 /* agilitest_iosDriver */,
-				047BFA7E22F178D800BB2E25 /* agilitest_iosDriverUITests */,
+				047BFA6622F178D700BB2E25 /* atsios */,
+				047BFA7E22F178D800BB2E25 /* atsiosUITests */,
 				047BFA6522F178D700BB2E25 /* Products */,
 				8104A8FE9B89D14A79A1BCE4 /* Pods */,
 				CE6333FFDB6E768160A7BE15 /* Frameworks */,
@@ -84,13 +84,13 @@
 		047BFA6522F178D700BB2E25 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				047BFA6422F178D700BB2E25 /* agilitest_iosDriver.app */,
-				047BFA7B22F178D800BB2E25 /* agilitest_iosDriverUITests.xctest */,
+				047BFA6422F178D700BB2E25 /* atsios.app */,
+				047BFA7B22F178D800BB2E25 /* atsiosUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		047BFA6622F178D700BB2E25 /* agilitest_iosDriver */ = {
+		047BFA6622F178D700BB2E25 /* atsios */ = {
 			isa = PBXGroup;
 			children = (
 				047BFA6722F178D700BB2E25 /* AppDelegate.swift */,
@@ -99,25 +99,25 @@
 				047BFA7122F178D800BB2E25 /* Assets.xcassets */,
 				047BFA7322F178D800BB2E25 /* LaunchScreen.storyboard */,
 				047BFA7622F178D800BB2E25 /* Info.plist */,
-				047BFA6E22F178D700BB2E25 /* agilitest_iosDriver.xcdatamodeld */,
+				047BFA6E22F178D700BB2E25 /* atsios.xcdatamodeld */,
 			);
-			path = agilitest_iosDriver;
+			path = atsios;
 			sourceTree = "<group>";
 		};
-		047BFA7E22F178D800BB2E25 /* agilitest_iosDriverUITests */ = {
+		047BFA7E22F178D800BB2E25 /* atsiosUITests */ = {
 			isa = PBXGroup;
 			children = (
-				047BFA7F22F178D800BB2E25 /* agilitest_iosDriverUITests.swift */,
+				047BFA7F22F178D800BB2E25 /* atsiosUITests.swift */,
 				047BFA8122F178D800BB2E25 /* Info.plist */,
 			);
-			path = agilitest_iosDriverUITests;
+			path = atsiosUITests;
 			sourceTree = "<group>";
 		};
 		8104A8FE9B89D14A79A1BCE4 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				3B97D02C32185D6B17C4C264 /* Pods-agilitest_iosDriverUITests.debug.xcconfig */,
-				61439A76FF1AF60C5E954422 /* Pods-agilitest_iosDriverUITests.release.xcconfig */,
+				CF14D7879408BF914F82B665 /* Pods-atsiosUITests.debug.xcconfig */,
+				5678C43C43C84FCACF81C48D /* Pods-atsiosUITests.release.xcconfig */,
 			);
 			path = Pods;
 			sourceTree = "<group>";
@@ -128,7 +128,7 @@
 				049922E322F2F30500A53078 /* libSwiftyJSON.a */,
 				04FB980F22F17BC500D2B564 /* libEmbassy.a */,
 				04FB981122F17BC500D2B564 /* libEnvoyAmbassador.a */,
-				78126EC78CCE714AECFF6B63 /* libPods-agilitest_iosDriverUITests.a */,
+				C0D8CE06F7ACBB16A5BDF271 /* libPods-atsiosUITests.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -136,9 +136,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		047BFA6322F178D700BB2E25 /* agilitest_iosDriver */ = {
+		047BFA6322F178D700BB2E25 /* atsios */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 047BFA8422F178D800BB2E25 /* Build configuration list for PBXNativeTarget "agilitest_iosDriver" */;
+			buildConfigurationList = 047BFA8422F178D800BB2E25 /* Build configuration list for PBXNativeTarget "atsios" */;
 			buildPhases = (
 				047BFA6022F178D700BB2E25 /* Sources */,
 				047BFA6122F178D700BB2E25 /* Frameworks */,
@@ -148,14 +148,14 @@
 			);
 			dependencies = (
 			);
-			name = agilitest_iosDriver;
+			name = atsios;
 			productName = agilitest_iosDriver;
-			productReference = 047BFA6422F178D700BB2E25 /* agilitest_iosDriver.app */;
+			productReference = 047BFA6422F178D700BB2E25 /* atsios.app */;
 			productType = "com.apple.product-type.application";
 		};
-		047BFA7A22F178D800BB2E25 /* agilitest_iosDriverUITests */ = {
+		047BFA7A22F178D800BB2E25 /* atsiosUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 047BFA8722F178D800BB2E25 /* Build configuration list for PBXNativeTarget "agilitest_iosDriverUITests" */;
+			buildConfigurationList = 047BFA8722F178D800BB2E25 /* Build configuration list for PBXNativeTarget "atsiosUITests" */;
 			buildPhases = (
 				DD4A9195FF4E34E1E7D1C6B8 /* [CP] Check Pods Manifest.lock */,
 				047BFA7722F178D800BB2E25 /* Sources */,
@@ -167,9 +167,9 @@
 			dependencies = (
 				047BFA7D22F178D800BB2E25 /* PBXTargetDependency */,
 			);
-			name = agilitest_iosDriverUITests;
+			name = atsiosUITests;
 			productName = agilitest_iosDriverUITests;
-			productReference = 047BFA7B22F178D800BB2E25 /* agilitest_iosDriverUITests.xctest */;
+			productReference = 047BFA7B22F178D800BB2E25 /* atsiosUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -191,7 +191,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 047BFA5F22F178D700BB2E25 /* Build configuration list for PBXProject "agilitest_iosDriver" */;
+			buildConfigurationList = 047BFA5F22F178D700BB2E25 /* Build configuration list for PBXProject "atsios" */;
 			compatibilityVersion = "Xcode 9.3";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -204,8 +204,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				047BFA6322F178D700BB2E25 /* agilitest_iosDriver */,
-				047BFA7A22F178D800BB2E25 /* agilitest_iosDriverUITests */,
+				047BFA6322F178D700BB2E25 /* atsios */,
+				047BFA7A22F178D800BB2E25 /* atsiosUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -246,7 +246,7 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-agilitest_iosDriverUITests-checkManifestLockResult.txt",
+				"$(DERIVED_FILE_DIR)/Pods-atsiosUITests-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -262,7 +262,7 @@
 			files = (
 				047BFA6A22F178D700BB2E25 /* ViewController.swift in Sources */,
 				047BFA6822F178D700BB2E25 /* AppDelegate.swift in Sources */,
-				047BFA7022F178D700BB2E25 /* agilitest_iosDriver.xcdatamodeld in Sources */,
+				047BFA7022F178D700BB2E25 /* atsios.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -270,7 +270,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				047BFA8022F178D800BB2E25 /* agilitest_iosDriverUITests.swift in Sources */,
+				047BFA8022F178D800BB2E25 /* atsiosUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -279,7 +279,7 @@
 /* Begin PBXTargetDependency section */
 		047BFA7D22F178D800BB2E25 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 047BFA6322F178D700BB2E25 /* agilitest_iosDriver */;
+			target = 047BFA6322F178D700BB2E25 /* atsios */;
 			targetProxy = 047BFA7C22F178D800BB2E25 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -425,12 +425,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				INFOPLIST_FILE = agilitest_iosDriver/Info.plist;
+				INFOPLIST_FILE = atsios/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "CAIPTURE.agilitest-iosDriver";
+				PRODUCT_BUNDLE_IDENTIFIER = CAIPTURE.atsios;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -442,12 +442,12 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				INFOPLIST_FILE = agilitest_iosDriver/Info.plist;
+				INFOPLIST_FILE = atsios/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "CAIPTURE.agilitest-iosDriver";
+				PRODUCT_BUNDLE_IDENTIFIER = CAIPTURE.atsios;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -456,48 +456,48 @@
 		};
 		047BFA8822F178D800BB2E25 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 3B97D02C32185D6B17C4C264 /* Pods-agilitest_iosDriverUITests.debug.xcconfig */;
+			baseConfigurationReference = CF14D7879408BF914F82B665 /* Pods-atsiosUITests.debug.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				CODE_SIGN_STYLE = Automatic;
-				INFOPLIST_FILE = agilitest_iosDriverUITests/Info.plist;
+				INFOPLIST_FILE = atsios/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "CAIPTURE.agilitest-iosDriverUITests";
+				PRODUCT_BUNDLE_IDENTIFIER = CAIPTURE.atsios;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = agilitest_iosDriver;
+				TEST_TARGET_NAME = atsios;
 			};
 			name = Debug;
 		};
 		047BFA8922F178D800BB2E25 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 61439A76FF1AF60C5E954422 /* Pods-agilitest_iosDriverUITests.release.xcconfig */;
+			baseConfigurationReference = 5678C43C43C84FCACF81C48D /* Pods-atsiosUITests.release.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
 				CODE_SIGN_STYLE = Automatic;
-				INFOPLIST_FILE = agilitest_iosDriverUITests/Info.plist;
+				INFOPLIST_FILE = atsios/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 					"@loader_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "CAIPTURE.agilitest-iosDriverUITests";
+				PRODUCT_BUNDLE_IDENTIFIER = CAIPTURE.atsios;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = agilitest_iosDriver;
+				TEST_TARGET_NAME = atsios;
 			};
 			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		047BFA5F22F178D700BB2E25 /* Build configuration list for PBXProject "agilitest_iosDriver" */ = {
+		047BFA5F22F178D700BB2E25 /* Build configuration list for PBXProject "atsios" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				047BFA8222F178D800BB2E25 /* Debug */,
@@ -506,7 +506,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		047BFA8422F178D800BB2E25 /* Build configuration list for PBXNativeTarget "agilitest_iosDriver" */ = {
+		047BFA8422F178D800BB2E25 /* Build configuration list for PBXNativeTarget "atsios" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				047BFA8522F178D800BB2E25 /* Debug */,
@@ -515,7 +515,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		047BFA8722F178D800BB2E25 /* Build configuration list for PBXNativeTarget "agilitest_iosDriverUITests" */ = {
+		047BFA8722F178D800BB2E25 /* Build configuration list for PBXNativeTarget "atsiosUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				047BFA8822F178D800BB2E25 /* Debug */,
@@ -527,13 +527,13 @@
 /* End XCConfigurationList section */
 
 /* Begin XCVersionGroup section */
-		047BFA6E22F178D700BB2E25 /* agilitest_iosDriver.xcdatamodeld */ = {
+		047BFA6E22F178D700BB2E25 /* atsios.xcdatamodeld */ = {
 			isa = XCVersionGroup;
 			children = (
 				047BFA6F22F178D700BB2E25 /* agilitest_iosDriver.xcdatamodel */,
 			);
 			currentVersion = 047BFA6F22F178D700BB2E25 /* agilitest_iosDriver.xcdatamodel */;
-			path = agilitest_iosDriver.xcdatamodeld;
+			path = atsios.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;
 		};

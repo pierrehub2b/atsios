@@ -11,6 +11,6 @@
 #endif
 
 
-FOUNDATION_EXPORT double Pods_agilitest_iosDriverUITestsVersionNumber;
-FOUNDATION_EXPORT const unsigned char Pods_agilitest_iosDriverUITestsVersionString[];
+FOUNDATION_EXPORT double Pods_atsiosUITestsVersionNumber;
+FOUNDATION_EXPORT const unsigned char Pods_atsiosUITestsVersionString[];
 

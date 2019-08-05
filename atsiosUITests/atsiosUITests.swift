@@ -1,6 +1,6 @@
 //
-//  agilitest_iosDriverUITests.swift
-//  agilitest_iosDriverUITests
+//  atsiosUITests.swift
+//  atsiosUITests
 //
 //  Created by Laura Chiudini on 31/07/2019.
 //  Copyright © 2019 CAIPTURE. All rights reserved.
@@ -38,7 +38,7 @@ struct UIElement:Codable {
     var Height: Int
 }
 
-class agilitest_iosDriverUITests: XCTestCase {
+class atsiosUITests: XCTestCase {
     
     let port = 8080
     var app: XCUIApplication!
