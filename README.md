@@ -1,2 +1,2 @@
-# atsios
-IOS driver for ATS test framework
+# agilitest_iosDriver
+Driver ios for Agilitest

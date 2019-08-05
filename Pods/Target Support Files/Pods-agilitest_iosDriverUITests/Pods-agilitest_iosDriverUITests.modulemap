@@ -1,0 +1,6 @@
+module Pods_agilitest_iosDriverUITests {
+  umbrella header "Pods-agilitest_iosDriverUITests-umbrella.h"
+
+  export *
+  module * { export * }
+}
