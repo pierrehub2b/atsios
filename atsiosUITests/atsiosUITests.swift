@@ -28,14 +28,15 @@ class ActionElement {
 
 struct UIElement:Codable {
     var ElementTypeString: String
-    var ElementTypeUInt: UInt
     var Value: String
-    var Title: String
+    var PlaceHolderValue: String
     var Label: String
-    var X: Int
-    var Y: Int
-    var Width: Int
-    var Height: Int
+    var Identifier: String
+    var X: Float
+    var Y: Float
+    var Width: Float
+    var Height: Float
+    var UId: String
 }
 
 class atsiosUITests: XCTestCase {
@@ -49,6 +50,15 @@ class atsiosUITests: XCTestCase {
     var allElements: [UIElement] = [UIElement]()
     
     var continueExecution = true
+    
+    var applicationControls =
+        [
+         "any","other","application","group","window","sheet","drawer","alert","dialog","button","radiobutton","radiogroup","checkbox","disclosuretriangle","popupbutton","combobox","menubutton","toolbarbutton","popover",
+         "keyboard","key","navigationbar","tabbar","tabgroup","toolbar","statusbar","table","tablerow","tablecolumn","outline","outlinerow","browser","collectionview","slider","pageindicator","progressindicator",
+         "activityindicator","segmentedcontrol","picker","pickerwheel","switch","toogle","link","image","icon","searchfield","scrollview","scrollbar","statictext","textfield","securetextfield","datepicker","textview",
+         "menu","menuitem","menubar","menubaritem","map","webview","incrementarrow","decrementarrow","timeline","ratingindicator","valueindicator","splitgroup","splitter","relevanceindicator","colorwell","helptag","matte",
+         "dockitem","ruler","rulermarker","grid","levelindicator","cell","layoutarea","layoutitem","handle","stepper","tab","touchbar","statusitem"
+        ]
 
     override func setUp() {
         super.setUp()
@@ -191,7 +201,7 @@ class atsiosUITests: XCTestCase {
         case 65:
             return "splitter"
         case 66:
-            return "relevance Indicator"
+            return "relevanceIndicator"
         case 67:
             return "colorWell"
         case 68:
@@ -269,7 +279,63 @@ class atsiosUITests: XCTestCase {
                     //self.allElements = [UIElement]()
                     //self.getDom()
                     //result = self.convertIntoJSONString(arrayObject: self.allElements)
-                    result = self.app.debugDescription
+                    result = ""
+                    self.allElements = []
+                    let debugDescriptionTable = self.app.debugDescription.split { $0.isNewline }
+                    for line in debugDescriptionTable {
+                        let trimmedString = line.trimmingCharacters(in: .whitespaces).lowercased()
+                        let match = self.applicationControls.filter { trimmedString.starts(with: $0) }.count != 0
+                        if(match && !line.contains("pid:")) {
+                            var currentElement = trimmedString.split(separator: ",")
+                            let type = currentElement[0].replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "(main)", with: "")
+                            let uid = currentElement[1].replacingOccurrences(of: " ", with: "")
+                            let x = currentElement[2].replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "{", with: "").replacingOccurrences(of: "}", with: "")
+                            let y = currentElement[3].replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "{", with: "").replacingOccurrences(of: "}", with: "")
+                            let width = currentElement[4].replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "{", with: "").replacingOccurrences(of: "}", with: "")
+                            let height = currentElement[5].replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "{", with: "").replacingOccurrences(of: "}", with: "")
+                            var label = ""
+                            var id = ""
+                            var placeHolderValue = ""
+                            var value = ""
+                            
+                            if(currentElement.count > 6) {
+                                for index in 6...currentElement.count-1 {
+                                    var currentElemIdentifiers = currentElement[index].split(separator: ":")
+                                    let identifier = currentElemIdentifiers[0].replacingOccurrences(of: " ", with: "")
+                                    if(identifier.lowercased() == "label") {
+                                        label = currentElemIdentifiers[1].replacingOccurrences(of: "'", with: "").trimmingCharacters(in: .whitespaces)
+                                    }
+                                    
+                                    if(identifier.lowercased() == "placeholdervalue") {
+                                        placeHolderValue = currentElemIdentifiers[1].replacingOccurrences(of: "'", with: "").trimmingCharacters(in: .whitespaces)
+                                    }
+                                    
+                                    if(identifier.lowercased() == "value") {
+                                        value = currentElemIdentifiers[1].replacingOccurrences(of: "'", with: "").trimmingCharacters(in: .whitespaces)
+                                    }
+                                    
+                                    if(identifier.lowercased() == "identifier") {
+                                        id = currentElemIdentifiers[1].replacingOccurrences(of: "'", with: "").trimmingCharacters(in: .whitespaces)
+                                    }
+                                    
+                                }
+                            }
+
+                            self.allElements.append(UIElement(
+                                ElementTypeString: type,
+                                Value: value,
+                                PlaceHolderValue: placeHolderValue,
+                                Label: label,
+                                Identifier: id,
+                                X: Float(x) as! Float,
+                                Y: Float(y) as! Float,
+                                Width: Float(width) as! Float,
+                                Height: Float(height) as! Float,
+                                UId: uid)
+                            )
+                        }
+                    }
+                    result = self.convertIntoJSONString(arrayObject: self.allElements)
                     break
                 case "getElement":
                     if(parameter == "" && field == "") {
@@ -350,27 +416,6 @@ class atsiosUITests: XCTestCase {
             return elements.element(boundBy: 0)
         }
         return nil
-    }
-    
-    func getDom() {
-        let currentAppDom = self.app.descendants(matching: .any)
-        for i in 0..<currentAppDom.count {
-            let element = currentAppDom.element(boundBy: i)
-            if(element.isHittable) {
-                let e = UIElement(
-                    ElementTypeString: self.getEnumStringValue(rawValue: element.elementType.rawValue),
-                    ElementTypeUInt: element.elementType.rawValue,
-                    Value: element.value as! String,
-                    Title: element.title,
-                    Label: element.label,
-                    X: Int(element.frame.minX),
-                    Y: Int(element.frame.minY),
-                    Width: Int(element.frame.width),
-                    Height: Int(element.frame.height)
-                )
-                self.allElements.append(e)
-            }
-        }
     }
     
     func convertIntoJSONString(arrayObject: [UIElement]) -> String {
