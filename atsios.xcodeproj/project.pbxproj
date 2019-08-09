@@ -14,6 +14,7 @@
 		047BFA7222F178D800BB2E25 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 047BFA7122F178D800BB2E25 /* Assets.xcassets */; };
 		047BFA7522F178D800BB2E25 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 047BFA7322F178D800BB2E25 /* LaunchScreen.storyboard */; };
 		047BFA8022F178D800BB2E25 /* atsiosUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 047BFA7F22F178D800BB2E25 /* atsiosUITests.swift */; };
+		04DEC05F22FB21FF00941684 /* libSwiftSocket.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 04DEC05E22FB21FF00941684 /* libSwiftSocket.a */; };
 		04FB981022F17BC500D2B564 /* libEmbassy.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 04FB980F22F17BC500D2B564 /* libEmbassy.a */; };
 		04FB981222F17BC500D2B564 /* libEnvoyAmbassador.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 04FB981122F17BC500D2B564 /* libEnvoyAmbassador.a */; };
 		B838CAF2ACFF0346AFC747BC /* libPods-atsiosUITests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C0D8CE06F7ACBB16A5BDF271 /* libPods-atsiosUITests.a */; };
@@ -30,6 +31,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		046FFFB122F9BDF8008C6466 /* libUITestHelpers.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libUITestHelpers.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		047BFA6422F178D700BB2E25 /* atsios.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = atsios.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		047BFA6722F178D700BB2E25 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		047BFA6922F178D700BB2E25 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -42,6 +44,7 @@
 		047BFA7F22F178D800BB2E25 /* atsiosUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = atsiosUITests.swift; sourceTree = "<group>"; };
 		047BFA8122F178D800BB2E25 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		049922E322F2F30500A53078 /* libSwiftyJSON.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libSwiftyJSON.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		04DEC05E22FB21FF00941684 /* libSwiftSocket.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libSwiftSocket.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		04FB980F22F17BC500D2B564 /* libEmbassy.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libEmbassy.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		04FB981122F17BC500D2B564 /* libEnvoyAmbassador.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libEnvoyAmbassador.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		5678C43C43C84FCACF81C48D /* Pods-atsiosUITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-atsiosUITests.release.xcconfig"; path = "Target Support Files/Pods-atsiosUITests/Pods-atsiosUITests.release.xcconfig"; sourceTree = "<group>"; };
@@ -61,6 +64,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				04DEC05F22FB21FF00941684 /* libSwiftSocket.a in Frameworks */,
 				04FB981022F17BC500D2B564 /* libEmbassy.a in Frameworks */,
 				04FB981222F17BC500D2B564 /* libEnvoyAmbassador.a in Frameworks */,
 				B838CAF2ACFF0346AFC747BC /* libPods-atsiosUITests.a in Frameworks */,
@@ -125,6 +129,8 @@
 		CE6333FFDB6E768160A7BE15 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				04DEC05E22FB21FF00941684 /* libSwiftSocket.a */,
+				046FFFB122F9BDF8008C6466 /* libUITestHelpers.a */,
 				049922E322F2F30500A53078 /* libSwiftyJSON.a */,
 				04FB980F22F17BC500D2B564 /* libEmbassy.a */,
 				04FB981122F17BC500D2B564 /* libEnvoyAmbassador.a */,
@@ -362,6 +368,7 @@
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 4.0;
 			};
 			name = Debug;
 		};
@@ -416,6 +423,7 @@
 				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 4.0;
 				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
@@ -424,7 +432,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
 				INFOPLIST_FILE = atsios/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -432,6 +442,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = CAIPTURE.atsios;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -441,7 +452,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
 				INFOPLIST_FILE = atsios/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -449,6 +462,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = CAIPTURE.atsios;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -459,7 +473,9 @@
 			baseConfigurationReference = CF14D7879408BF914F82B665 /* Pods-atsiosUITests.debug.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = Q33AB6YYGF;
 				INFOPLIST_FILE = atsios/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -468,6 +484,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = CAIPTURE.atsios;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = atsios;
@@ -479,7 +496,9 @@
 			baseConfigurationReference = 5678C43C43C84FCACF81C48D /* Pods-atsiosUITests.release.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = Q33AB6YYGF;
 				INFOPLIST_FILE = atsios/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -488,6 +507,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = CAIPTURE.atsios;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_TARGET_NAME = atsios;

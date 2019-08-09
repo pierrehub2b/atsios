@@ -6,4 +6,5 @@ target 'atsiosUITests' do
   # Pods for testing
   pod 'Embassy'
   pod 'EnvoyAmbassador'
+  pod 'SwiftSocket'
 end
