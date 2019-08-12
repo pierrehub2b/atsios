@@ -2,8 +2,7 @@
 //  atsiosUITests.swift
 //  atsiosUITests
 //
-//  Created by Laura Chiudini on 31/07/2019.
-//  Copyright © 2019 CAIPTURE. All rights reserved.
+//  Copyright © 2019 ATSIOS. All rights reserved.
 //
 
 import Foundation
@@ -66,6 +65,62 @@ enum deviceButtons: String {
     case ENTER = "enter"
     case RETURN = "return"
     case ORIENTATION = "orientation"
+}
+
+import UIKit
+
+extension XCUIDevice {
+    
+    private struct InterfaceNames {
+        static let wifi = ["en0"]
+        static let wired = ["en2", "en3", "en4"]
+        static let cellular = ["pdp_ip0","pdp_ip1","pdp_ip2","pdp_ip3"]
+        static let supported = wifi
+    }
+    
+    func ipAddress() -> String? {
+        var ipAddress: String?
+        var ifaddr: UnsafeMutablePointer<ifaddrs>?
+        
+        if getifaddrs(&ifaddr) == 0 {
+            var pointer = ifaddr
+            
+            while pointer != nil {
+                defer { pointer = pointer?.pointee.ifa_next }
+                
+                guard
+                    let interface = pointer?.pointee,
+                    interface.ifa_addr.pointee.sa_family == UInt8(AF_INET) || interface.ifa_addr.pointee.sa_family == UInt8(AF_INET6),
+                    let interfaceName = interface.ifa_name,
+                    let interfaceNameFormatted = String(cString: interfaceName, encoding: .utf8),
+                    InterfaceNames.supported.contains(interfaceNameFormatted)
+                    else { continue }
+                
+                var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
+                
+                getnameinfo(interface.ifa_addr,
+                            socklen_t(interface.ifa_addr.pointee.sa_len),
+                            &hostname,
+                            socklen_t(hostname.count),
+                            nil,
+                            socklen_t(0),
+                            NI_NUMERICHOST)
+                
+                guard
+                    let formattedIpAddress = String(cString: hostname, encoding: .utf8),
+                    !formattedIpAddress.isEmpty
+                    else { continue }
+                
+                ipAddress = formattedIpAddress
+                break
+            }
+            
+            freeifaddrs(ifaddr)
+        }
+        
+        return ipAddress
+    }
+    
 }
 
 class atsiosUITests: XCTestCase {
@@ -171,7 +226,66 @@ class atsiosUITests: XCTestCase {
                         }
                         break
                     case actionsEnum.CAPTURE.rawValue:
-                        _ = UIImageView(image: self.app.screenshot().image)
+                        self.allElements = []
+                        let debugDescriptionTable = self.app.debugDescription.split { $0.isNewline }
+                        for line in debugDescriptionTable {
+                            let trimmedString = line.trimmingCharacters(in: .whitespaces)
+                            let trimmerStringLower = trimmedString.lowercased()
+                            let match = self.applicationControls.filter { trimmerStringLower.starts(with: $0.lowercased()) }.count != 0
+                            if(match && !line.contains("pid:")) {
+                                var currentElement = trimmedString.split(separator: ",")
+                                let type = currentElement[0].replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "(main)", with: "")
+                                let uid = currentElement[1].replacingOccurrences(of: " ", with: "")
+                                let x = currentElement[2].replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "{", with: "").replacingOccurrences(of: "}", with: "")
+                                let y = currentElement[3].replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "{", with: "").replacingOccurrences(of: "}", with: "")
+                                let width = currentElement[4].replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "{", with: "").replacingOccurrences(of: "}", with: "")
+                                let height = currentElement[5].replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "{", with: "").replacingOccurrences(of: "}", with: "")
+                                var label = ""
+                                var id = ""
+                                var placeHolderValue = ""
+                                var value = ""
+                                
+                                if(currentElement.count > 6) {
+                                    for index in 6...currentElement.count-1 {
+                                        var currentElemIdentifiers = currentElement[index].split(separator: ":")
+                                        let identifier = currentElemIdentifiers[0].replacingOccurrences(of: " ", with: "")
+                                        if(identifier.lowercased() == "label") {
+                                            label = currentElemIdentifiers[1].replacingOccurrences(of: "'", with: "").trimmingCharacters(in: .whitespaces)
+                                            //var xcUIElement = self.retrieveElement(parameter: "Label", field: label)
+                                        }
+                                        
+                                        if(identifier.lowercased() == "placeholdervalue") {
+                                            placeHolderValue = currentElemIdentifiers[1].replacingOccurrences(of: "'", with: "").trimmingCharacters(in: .whitespaces)
+                                            //var xcUIElement = self.retrieveElement(parameter: "PlaceHolderValue", field: placeHolderValue)
+                                        }
+                                        
+                                        if(identifier.lowercased() == "value") {
+                                            value = currentElemIdentifiers[1].replacingOccurrences(of: "'", with: "").trimmingCharacters(in: .whitespaces)
+                                            //var xcUIElement = self.retrieveElement(parameter: "Value", field: value)
+                                        }
+                                        
+                                        if(identifier.lowercased() == "identifier") {
+                                            id = currentElemIdentifiers[1].replacingOccurrences(of: "'", with: "").trimmingCharacters(in: .whitespaces)
+                                        }
+                                        
+                                    }
+                                }
+                                
+                                self.allElements.append(UIElement(
+                                    ElementTypeString: type,
+                                    Value: value,
+                                    PlaceHolderValue: placeHolderValue,
+                                    Label: label,
+                                    Identifier: id,
+                                    X: Float(x)!,
+                                    Y: Float(y)!,
+                                    Width: Float(width)!,
+                                    Height: Float(height)!,
+                                    UId: uid)
+                                )
+                            }
+                        }
+                        result = self.convertIntoJSONString(arrayObject: self.allElements)
                         break
                     case actionsEnum.ELEMENT.rawValue:
                         if(parameters.count > 1) {
@@ -188,17 +302,16 @@ class atsiosUITests: XCTestCase {
                             if(element != nil) {
                                 if(actionsEnum.INPUT.rawValue == parameters[1]) {
                                     let text = parameters[2]
-                                    element?.tap()
-                                    if(text == actionsEnum.EMPTY.rawValue) {
-                                        guard let stringValue = element?.value as? String else {
-                                            XCTFail("Tried to clear and enter text into a non string value")
-                                            return
+                                    if(element!.elementType.rawValue == 49 || element!.elementType.rawValue == 50) {
+                                        element?.tap()
+                                        if(text == actionsEnum.EMPTY.rawValue) {
+                                            let deleteString = String(repeating: XCUIKeyboardKey.delete.rawValue, count: (element?.value as? String)?.count ?? 0)
+                                            element?.typeText(deleteString)
+                                        } else {
+                                            element?.typeText(text)
                                         }
-                                        
-                                        let deleteString = String(repeating: XCUIKeyboardKey.delete.rawValue, count: stringValue.characters.count)
-                                        element?.typeText(deleteString)
                                     } else {
-                                        element?.typeText(text)
+                                        element?.tap()
                                     }
                                 } else {
                                     var offSetX = 0
@@ -208,8 +321,8 @@ class atsiosUITests: XCTestCase {
                                         offSetY = Int(parameters[3])!
                                     }
                                     
-                                    var calculateX = Double(element?.frame.minX ?? 0) + Double(offSetX)
-                                    var calculateY = Double(element?.frame.minY ?? 0) + Double(offSetY)
+                                    let calculateX = Double(element?.frame.minX ?? 0) + Double(offSetX)
+                                    let calculateY = Double(element?.frame.minY ?? 0) + Double(offSetY)
                                     
                                     if(actionsEnum.TAP.rawValue == parameters[1]) {
                                         self.tapCoordinate(at: calculateX, and: calculateY)
@@ -258,75 +371,12 @@ class atsiosUITests: XCTestCase {
                         }
                         break
                     case actionsEnum.INFO.rawValue:
-                        if(parameters.count == 0) {
-                            result += "device informations:\n"
-                            result += XCUIDevice.shared.debugDescription
-                        } else {
-                            self.allElements = []
-                            let debugDescriptionTable = self.app.debugDescription.split { $0.isNewline }
-                            for line in debugDescriptionTable {
-                                let trimmedString = line.trimmingCharacters(in: .whitespaces)
-                                let trimmerStringLower = trimmedString.lowercased()
-                                let match = self.applicationControls.filter { trimmerStringLower.starts(with: $0.lowercased()) }.count != 0
-                                if(match && !line.contains("pid:")) {
-                                    var currentElement = trimmedString.split(separator: ",")
-                                    let type = currentElement[0].replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "(main)", with: "")
-                                    let uid = currentElement[1].replacingOccurrences(of: " ", with: "")
-                                    let x = currentElement[2].replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "{", with: "").replacingOccurrences(of: "}", with: "")
-                                    let y = currentElement[3].replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "{", with: "").replacingOccurrences(of: "}", with: "")
-                                    let width = currentElement[4].replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "{", with: "").replacingOccurrences(of: "}", with: "")
-                                    let height = currentElement[5].replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "{", with: "").replacingOccurrences(of: "}", with: "")
-                                    var label = ""
-                                    var id = ""
-                                    var placeHolderValue = ""
-                                    var value = ""
-                                    
-                                    if(currentElement.count > 6) {
-                                        for index in 6...currentElement.count-1 {
-                                            var currentElemIdentifiers = currentElement[index].split(separator: ":")
-                                            let identifier = currentElemIdentifiers[0].replacingOccurrences(of: " ", with: "")
-                                            if(identifier.lowercased() == "label") {
-                                                label = currentElemIdentifiers[1].replacingOccurrences(of: "'", with: "").trimmingCharacters(in: .whitespaces)
-                                                //var xcUIElement = self.retrieveElement(parameter: "Label", field: label)
-                                            }
-                                            
-                                            if(identifier.lowercased() == "placeholdervalue") {
-                                                placeHolderValue = currentElemIdentifiers[1].replacingOccurrences(of: "'", with: "").trimmingCharacters(in: .whitespaces)
-                                                //var xcUIElement = self.retrieveElement(parameter: "PlaceHolderValue", field: placeHolderValue)
-                                            }
-                                            
-                                            if(identifier.lowercased() == "value") {
-                                                value = currentElemIdentifiers[1].replacingOccurrences(of: "'", with: "").trimmingCharacters(in: .whitespaces)
-                                                //var xcUIElement = self.retrieveElement(parameter: "Value", field: value)
-                                            }
-                                            
-                                            if(identifier.lowercased() == "identifier") {
-                                                id = currentElemIdentifiers[1].replacingOccurrences(of: "'", with: "").trimmingCharacters(in: .whitespaces)
-                                            }
-                                            
-                                        }
-                                    }
-                                    
-                                    self.allElements.append(UIElement(
-                                        ElementTypeString: type,
-                                        Value: value,
-                                        PlaceHolderValue: placeHolderValue,
-                                        Label: label,
-                                        Identifier: id,
-                                        X: Float(x) as! Float,
-                                        Y: Float(y) as! Float,
-                                        Width: Float(width) as! Float,
-                                        Height: Float(height) as! Float,
-                                        UId: uid)
-                                    )
-                                }
-                            }
-                            result = self.convertIntoJSONString(arrayObject: self.allElements)
-                        }
+                        result += "device informations:\n"
+                        result += XCUIDevice.shared.debugDescription
                         break
-                        default:
-                            break
-                        }
+                    default:
+                        break
+                    }
             }
             
             sendBody(Data("\(result)".utf8))
@@ -390,7 +440,7 @@ class atsiosUITests: XCTestCase {
     private func setupApp() {
         app = XCUIApplication()
         app.launchEnvironment["RESET_LOGIN"] = "1"
-        app.launchEnvironment["ENVOY_BASEURL"] = "http://localhost:\(port)"
+        app.launchEnvironment["ENVOY_BASEURL"] = "http://192.168.1.17:\(port)"
     }
     
     override func tearDown() {
