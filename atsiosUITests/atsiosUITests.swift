@@ -440,7 +440,7 @@ class atsiosUITests: XCTestCase {
     private func setupApp() {
         app = XCUIApplication()
         app.launchEnvironment["RESET_LOGIN"] = "1"
-        app.launchEnvironment["ENVOY_BASEURL"] = "http://192.168.1.17:\(port)"
+        app.launchEnvironment["ENVOY_BASEURL"] = "http://localhost:\(port)"
     }
     
     override func tearDown() {
