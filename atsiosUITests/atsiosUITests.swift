@@ -12,20 +12,6 @@ import Embassy
 import EnvoyAmbassador
 import SwiftSocket
 
-enum Actions {
-    case launch
-    case getDom
-    case getElement
-    case text
-    case tap
-    case null
-}
-
-class ActionElement {
-    var Action: Actions = Actions.null
-    var Command: String = ""
-}
-
 struct UIElement:Codable {
     var ElementTypeString: String
     var Value: String
@@ -37,6 +23,12 @@ struct UIElement:Codable {
     var Width: Float
     var Height: Float
     var UId: String
+}
+
+struct ResultElement:Codable {
+    var type: String
+    var status: String
+    var message: String
 }
 
 enum actionsEnum: String {
@@ -67,72 +59,14 @@ enum deviceButtons: String {
     case ORIENTATION = "orientation"
 }
 
-import UIKit
-
-extension XCUIDevice {
-    
-    private struct InterfaceNames {
-        static let wifi = ["en0"]
-        static let wired = ["en2", "en3", "en4"]
-        static let cellular = ["pdp_ip0","pdp_ip1","pdp_ip2","pdp_ip3"]
-        static let supported = wifi
-    }
-    
-    func ipAddress() -> String? {
-        var ipAddress: String?
-        var ifaddr: UnsafeMutablePointer<ifaddrs>?
-        
-        if getifaddrs(&ifaddr) == 0 {
-            var pointer = ifaddr
-            
-            while pointer != nil {
-                defer { pointer = pointer?.pointee.ifa_next }
-                
-                guard
-                    let interface = pointer?.pointee,
-                    interface.ifa_addr.pointee.sa_family == UInt8(AF_INET) || interface.ifa_addr.pointee.sa_family == UInt8(AF_INET6),
-                    let interfaceName = interface.ifa_name,
-                    let interfaceNameFormatted = String(cString: interfaceName, encoding: .utf8),
-                    InterfaceNames.supported.contains(interfaceNameFormatted)
-                    else { continue }
-                
-                var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
-                
-                getnameinfo(interface.ifa_addr,
-                            socklen_t(interface.ifa_addr.pointee.sa_len),
-                            &hostname,
-                            socklen_t(hostname.count),
-                            nil,
-                            socklen_t(0),
-                            NI_NUMERICHOST)
-                
-                guard
-                    let formattedIpAddress = String(cString: hostname, encoding: .utf8),
-                    !formattedIpAddress.isEmpty
-                    else { continue }
-                
-                ipAddress = formattedIpAddress
-                break
-            }
-            
-            freeifaddrs(ifaddr)
-        }
-        
-        return ipAddress
-    }
-    
-}
-
 class atsiosUITests: XCTestCase {
     
     let port = 8080
     var app: XCUIApplication!
     var udpClient: UDPClient!
-
-    var stack: Array<ActionElement> = Array()
     var currentAppIdentifier: String = ""
-    
     var allElements: [UIElement] = [UIElement]()
+    var resultElement: [(String,String)] = [(String,String)]()
     
     var continueExecution = true
     
@@ -174,11 +108,8 @@ class atsiosUITests: XCTestCase {
             startResponse: ((String, [(String, String)]) -> Void),
             sendBody: ((Data) -> Void)
             ) in
-            // Start HTTP response
-            startResponse("200 OK", [])
             let query_String = environ["PATH_INFO"]! as! String
             let action = query_String.replacingOccurrences(of: "/", with: "")
-            var result = ""
             var parameters: [String] = [String]()
             
             let input = environ["swsgi.input"] as! SWSGIInput
@@ -195,20 +126,26 @@ class atsiosUITests: XCTestCase {
             }
         
             if(action == "") {
-                result = "invalid action"
+                self.resultElement.append(("type","Error"))
+                self.resultElement.append(("status","1"))
+                self.resultElement.append(("message","no action founded"))
             } else {
+                self.resultElement = [(String,String)]()
                 switch action {
                     case actionsEnum.DRIVER.rawValue:
                         if(parameters.count > 0) {
                             if(actionsEnum.START.rawValue == parameters[0]) {
-                                self.app = XCUIApplication(bundleIdentifier: "CAIPTURE.atsiosUITests")
                             }
                             if(actionsEnum.STOP.rawValue == parameters[0]) {
-                                self.app = XCUIApplication()
                             }
                             if(actionsEnum.QUIT.rawValue == parameters[0]) {
                                 self.tearDown()
                             }
+                            
+                            self.resultElement.append(("type",action))
+                            self.resultElement.append(("status","0"))
+                            self.driverInfoBase()
+                            self.resultElement.append(("screenCapturePort","8080"))
                         }
                         break
                     case actionsEnum.BUTTON.rawValue:
@@ -251,23 +188,19 @@ class atsiosUITests: XCTestCase {
                                         let identifier = currentElemIdentifiers[0].replacingOccurrences(of: " ", with: "")
                                         if(identifier.lowercased() == "label") {
                                             label = currentElemIdentifiers[1].replacingOccurrences(of: "'", with: "").trimmingCharacters(in: .whitespaces)
-                                            //var xcUIElement = self.retrieveElement(parameter: "Label", field: label)
                                         }
                                         
                                         if(identifier.lowercased() == "placeholdervalue") {
                                             placeHolderValue = currentElemIdentifiers[1].replacingOccurrences(of: "'", with: "").trimmingCharacters(in: .whitespaces)
-                                            //var xcUIElement = self.retrieveElement(parameter: "PlaceHolderValue", field: placeHolderValue)
                                         }
                                         
                                         if(identifier.lowercased() == "value") {
                                             value = currentElemIdentifiers[1].replacingOccurrences(of: "'", with: "").trimmingCharacters(in: .whitespaces)
-                                            //var xcUIElement = self.retrieveElement(parameter: "Value", field: value)
                                         }
                                         
                                         if(identifier.lowercased() == "identifier") {
                                             id = currentElemIdentifiers[1].replacingOccurrences(of: "'", with: "").trimmingCharacters(in: .whitespaces)
                                         }
-                                        
                                     }
                                 }
                                 
@@ -285,7 +218,6 @@ class atsiosUITests: XCTestCase {
                                 )
                             }
                         }
-                        result = self.convertIntoJSONString(arrayObject: self.allElements)
                         break
                     case actionsEnum.ELEMENT.rawValue:
                         if(parameters.count > 1) {
@@ -353,35 +285,28 @@ class atsiosUITests: XCTestCase {
                             if(actionsEnum.START.rawValue == parameters[0]) {
                                 self.app = XCUIApplication(bundleIdentifier: parameters[1])
                                 self.app.launch();
-                                result = "Start app: \(parameters[1])"
+                                self.resultElement.append(("type",action))
+                                self.resultElement.append(("status","0"))
+                                self.resultElement.append(("icon",""))
                             }
                             if(actionsEnum.SWITCH.rawValue == parameters[0]) {
                                 self.app = XCUIApplication(bundleIdentifier: parameters[1])
                                 self.app.launch()
-                                result = "Switch app: \(parameters[1])"
-                            }
-                            if(actionsEnum.INFO.rawValue == parameters[0]) {
-                                result = self.app.debugDescription
                             }
                             if(actionsEnum.STOP.rawValue == parameters[0]) {
                                 self.app = XCUIApplication(bundleIdentifier: parameters[1])
                                 self.app.terminate()
-                                result = "Stop app: \(parameters[1])"
                             }
                         }
                         break
                     case actionsEnum.INFO.rawValue:
-                        result += "device informations:\n"
-                        result += XCUIDevice.shared.debugDescription
                         break
                     default:
                         break
                     }
             }
             
-            sendBody(Data("\(result)".utf8))
-            
-            // send EOF
+            startResponse("200 OK", self.resultElement)
             sendBody(Data())
         }
         
@@ -424,6 +349,18 @@ class atsiosUITests: XCTestCase {
         return ""
     }
     
+    func convertIntoJSONString(arrayObject: [String:String]) -> String {
+        do {
+            let jsonEncoder = JSONEncoder()
+            let jsonData = try jsonEncoder.encode(arrayObject)
+            let json = String(data: jsonData, encoding: String.Encoding.utf8) ?? "no values"
+            return json
+        } catch let error as NSError {
+            print("Array convertIntoJSON - \(error.description)")
+        }
+        return ""
+    }
+    
     func getQueryStringParameter(query_string: String, param: String) -> String {
         let params = query_string.components(separatedBy: "&")
         for item in params {
@@ -445,6 +382,18 @@ class atsiosUITests: XCTestCase {
     
     override func tearDown() {
         super.tearDown()
+    }
+    
+    func driverInfoBase() {
+        self.resultElement.append(("os","ios"))
+        self.resultElement.append(("driverVersion","1.0.0"))
+        self.resultElement.append(("systemName","ios"))
+        self.resultElement.append(("deviceWidth","100"))
+        self.resultElement.append(("deviceHeight","100"))
+        self.resultElement.append(("channelWidth","100"))
+        self.resultElement.append(("channelHeight","100"))
+        self.resultElement.append(("channelX","100"))
+        self.resultElement.append(("channelY","100"))
     }
     
     func testExecuteCommand() {
