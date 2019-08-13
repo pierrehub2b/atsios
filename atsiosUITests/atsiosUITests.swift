@@ -66,7 +66,7 @@ class atsiosUITests: XCTestCase {
     var udpClient: UDPClient!
     var currentAppIdentifier: String = ""
     var allElements: [UIElement] = [UIElement]()
-    var resultElement: [[String:String]] = [[String:String]]()
+    var resultElement: [String: Any] = [:]
     
     var continueExecution = true
     
@@ -128,11 +128,11 @@ class atsiosUITests: XCTestCase {
             }
         
             if(action == "") {
-                self.resultElement.append(["type":"Error"])
-                self.resultElement.append(["status":"1"])
-                self.resultElement.append(["message":"No action founded"])
+                self.resultElement["type"] = "Error"
+                self.resultElement["type"] = "1"
+                self.resultElement["type"] = "No action founded"
             } else {
-                self.resultElement = [[String:String]]()
+                self.resultElement = [:]
                 switch action {
                     case actionsEnum.DRIVER.rawValue:
                         if(parameters.count > 0) {
@@ -152,9 +152,9 @@ class atsiosUITests: XCTestCase {
                                 self.tearDown()
                             }
                             
-                            self.resultElement.append(["type":action])
-                            self.resultElement.append(["status":"0"])
-                            self.resultElement.append(["screenCapturePort":"8080"])
+                            self.resultElement["type"] = action
+                            self.resultElement["status"] = 0
+                            self.resultElement["screenCapturePort"] = 47633
                             self.driverInfoBase()
                         }
                         break
@@ -231,7 +231,7 @@ class atsiosUITests: XCTestCase {
                                 )
                             }
                         }
-                        self.resultElement.append(["message": self.convertIntoJSONString(arrayObject: self.allElements)])
+                        self.resultElement["message"] = self.convertIntoJSONString(arrayObject: self.allElements)
                         break
                     case actionsEnum.ELEMENT.rawValue:
                         if(parameters.count > 1) {
@@ -299,9 +299,9 @@ class atsiosUITests: XCTestCase {
                             if(actionsEnum.START.rawValue == parameters[0]) {
                                 self.app = XCUIApplication(bundleIdentifier: parameters[1])
                                 self.app.launch();
-                                self.resultElement.append(["type":action])
-                                self.resultElement.append(["status":"0"])
-                                self.resultElement.append(["icon":""])
+                                self.resultElement["type"] = action
+                                self.resultElement["status"] = 0
+                                self.resultElement["icon"] = "icon"
                             }
                             if(actionsEnum.SWITCH.rawValue == parameters[0]) {
                                 self.app = XCUIApplication(bundleIdentifier: parameters[1])
@@ -320,9 +320,15 @@ class atsiosUITests: XCTestCase {
                     }
             }
             
-            
-            sendBody(Data(self.stringify(json: self.resultElement).utf8))
-            sendBody(Data())
+            if let theJSONData = try?  JSONSerialization.data(
+                withJSONObject: self.resultElement,
+                options: []
+                ),
+                let theJSONText = String(data: theJSONData,
+                                         encoding: String.Encoding.ascii) {
+                sendBody(Data(theJSONText.utf8))
+                sendBody(Data())
+            }
         }
         
         // Start HTTP server to listen on the port
@@ -409,15 +415,15 @@ class atsiosUITests: XCTestCase {
     }
     
     func driverInfoBase() {
-        self.resultElement.append(["os":"ios"])
-        self.resultElement.append(["driverVersion":"1.0.0"])
-        self.resultElement.append(["systemName":"ios"])
-        self.resultElement.append(["deviceWidth":"100"])
-        self.resultElement.append(["deviceHeight":"100"])
-        self.resultElement.append(["channelWidth":"100"])
-        self.resultElement.append(["channelHeight":"100"])
-        self.resultElement.append(["channelX":"100"])
-        self.resultElement.append(["channelY":"100"])
+        self.resultElement["os"] = "ios"
+        self.resultElement["driverVersion"] = "1.0.0"
+        self.resultElement["systemName"] = "simulator"
+        self.resultElement["deviceWidth"] = 100
+        self.resultElement["deviceHeight"] = 100
+        self.resultElement["channelWidth"] = 100
+        self.resultElement["channelHeight"] = 100
+        self.resultElement["channelX"] = 100
+        self.resultElement["channelY"] = 100
     }
     
     func testExecuteCommand() {
