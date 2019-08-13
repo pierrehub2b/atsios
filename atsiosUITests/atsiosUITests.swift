@@ -126,50 +126,72 @@ class atsiosUITests: XCTestCase {
                     }
                 }
             }
-        
+            self.resultElement = [:]
             if(action == "") {
-                self.resultElement["type"] = "Error"
-                self.resultElement["type"] = "1"
-                self.resultElement["type"] = "No action founded"
+                self.resultElement["status"] = -11
+                self.resultElement["message"] = "unknow command"
             } else {
-                self.resultElement = [:]
+                self.resultElement["type"] = action
                 switch action {
                     case actionsEnum.DRIVER.rawValue:
                         if(parameters.count > 0) {
                             if(actionsEnum.START.rawValue == parameters[0]) {
                                 XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
                                 XCUIDevice.shared.press(.home)
-                                //open simulator and unlock screen
-                            }
-                            if(actionsEnum.STOP.rawValue == parameters[0]) {
-                                if(self.app != nil){
-                                    self.app.terminate()
+                                self.resultElement["status"] = 0
+                                self.resultElement["screenCapturePort"] = 47633
+                                self.driverInfoBase()
+                            } else {
+                                if(actionsEnum.STOP.rawValue == parameters[0]) {
+                                    if(self.app != nil){
+                                        self.app.terminate()
+                                        self.resultElement["status"] = 0
+                                        self.resultElement["message"] = "stop ats driver"
+                                    }
+                                    XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
+                                    //close all apps
+                                } else {
+                                    if(actionsEnum.QUIT.rawValue == parameters[0]) {
+                                        self.tearDown()
+                                        self.resultElement["status"] = 0
+                                        self.resultElement["message"] = "close ats driver"
+                                    } else {
+                                        self.resultElement["message"] = "missiing driver action type " + parameters[0]
+                                        self.resultElement["status"] = -42
+                                    }
                                 }
-                                XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
-                                //close all apps
                             }
-                            if(actionsEnum.QUIT.rawValue == parameters[0]) {
-                                self.tearDown()
-                            }
-                            
-                            self.resultElement["type"] = action
-                            self.resultElement["status"] = 0
-                            self.resultElement["screenCapturePort"] = 47633
-                            self.driverInfoBase()
+                        } else {
+                            self.resultElement["message"] = "missing driver action"
+                            self.resultElement["status"] = -41
                         }
                         break
                     case actionsEnum.BUTTON.rawValue:
                         if(parameters.count > 0) {
                             if(deviceButtons.HOME.rawValue == parameters[0]) {
                                 XCUIDevice.shared.press(.home)
-                            }
-                            if(deviceButtons.ORIENTATION.rawValue == parameters[0]) {
-                                if(XCUIDevice.shared.orientation == .landscapeLeft) {
-                                    XCUIDevice.shared.orientation = .portrait
+                                self.resultElement["status"] = 0
+                                self.resultElement["message"] = "press home button"
+                            } else {
+                                if(deviceButtons.ORIENTATION.rawValue == parameters[0]) {
+                                    if(XCUIDevice.shared.orientation == .landscapeLeft) {
+                                        XCUIDevice.shared.orientation = .portrait
+                                        self.resultElement["status"] = 0
+                                        self.resultElement["message"] = "orientation to portrait mode"
+                                    } else {
+                                        XCUIDevice.shared.orientation = .landscapeLeft
+                                        self.resultElement["status"] = 0
+                                        self.resultElement["message"] = "orientation to landscape mode"
+                                    }
                                 } else {
-                                    XCUIDevice.shared.orientation = .landscapeLeft
+                                    self.resultElement["message"] = "unknow button " + parameters[0]
+                                    self.resultElement["status"] = -42
                                 }
                             }
+                            
+                        } else {
+                            self.resultElement["message"] = "missing button action"
+                            self.resultElement["status"] = -41
                         }
                         break
                     case actionsEnum.CAPTURE.rawValue:
@@ -244,6 +266,8 @@ class atsiosUITests: XCTestCase {
                             }
                             if(element != nil && !element!.isHittable) {
                                 element = nil
+                                self.resultElement["status"] = -22
+                                self.resultElement["message"] = "element not in the screen"
                             }
                             if(element != nil) {
                                 if(actionsEnum.INPUT.rawValue == parameters[1]) {
@@ -253,11 +277,17 @@ class atsiosUITests: XCTestCase {
                                         if(text == actionsEnum.EMPTY.rawValue) {
                                             let deleteString = String(repeating: XCUIKeyboardKey.delete.rawValue, count: (element?.value as? String)?.count ?? 0)
                                             element?.typeText(deleteString)
+                                            self.resultElement["status"] = 0
+                                            self.resultElement["message"] = "element clear text"
                                         } else {
                                             element?.typeText(text)
+                                            self.resultElement["status"] = 0
+                                            self.resultElement["message"] = "element tap text: " + text
                                         }
                                     } else {
                                         element?.tap()
+                                        self.resultElement["status"] = 0
+                                        self.resultElement["message"] = "not a text input, just tap"
                                     }
                                 } else {
                                     var offSetX = 0
@@ -272,6 +302,8 @@ class atsiosUITests: XCTestCase {
                                     
                                     if(actionsEnum.TAP.rawValue == parameters[1]) {
                                         self.tapCoordinate(at: calculateX, and: calculateY)
+                                        self.resultElement["status"] = 0
+                                        self.resultElement["message"] = "tap on element"
                                     } else {
                                         if(actionsEnum.SWIPE.rawValue == parameters[1]) {
                                             let directionX = Double(parameters[4]) ?? 0.0
@@ -288,10 +320,18 @@ class atsiosUITests: XCTestCase {
                                             if(directionY < 0.0) {
                                                 element?.swipeDown()
                                             }
+                                            self.resultElement["status"] = 0
+                                            self.resultElement["message"] = "swipe element"
                                         }
                                     }
                                 }
+                            } else {
+                                self.resultElement["status"] = -21
+                                self.resultElement["message"] = "missing element"
                             }
+                        }  else {
+                            self.resultElement["message"] = "missing element action"
+                            self.resultElement["status"] = -41
                         }
                         break
                     case actionsEnum.APP.rawValue:
@@ -299,23 +339,55 @@ class atsiosUITests: XCTestCase {
                             if(actionsEnum.START.rawValue == parameters[0]) {
                                 self.app = XCUIApplication(bundleIdentifier: parameters[1])
                                 self.app.launch();
-                                self.resultElement["type"] = action
+                                self.resultElement["message"] = "start app " + parameters[1]
                                 self.resultElement["status"] = 0
-                                self.resultElement["icon"] = "icon"
+                                self.resultElement["label"] = self.app.label
+                                self.resultElement["icon"] = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAC4jAAAuIwF4pT92AAAAB3RJTUUH4wgNCzQS2tg9zgAAABl0RVh0Q29tbWVudABDcmVhdGVkIHdpdGggR0lNUFeBDhcAAAAMSURBVAjXY2DY/QYAAmYBqC0q4zEAAAAASUVORK5CYII="
+                                self.resultElement["version"] = "0.0.0"
+                            } else {
+                                if(actionsEnum.SWITCH.rawValue == parameters[0]) {
+                                    self.app = XCUIApplication(bundleIdentifier: parameters[1])
+                                    self.app.launch()
+                                    self.resultElement["message"] = "switch app " + parameters[1]
+                                    self.resultElement["status"] = 0
+                                } else {
+                                    if(actionsEnum.STOP.rawValue == parameters[0]) {
+                                        self.app = XCUIApplication(bundleIdentifier: parameters[1])
+                                        self.app.terminate()
+                                        self.resultElement["message"] = "stop app " + parameters[1]
+                                        self.resultElement["status"] = 0
+                                    } else {
+                                        self.resultElement["message"] = "missiing app action type " + parameters[0]
+                                        self.resultElement["status"] = -42
+                                    }
+                                }
+                                
                             }
-                            if(actionsEnum.SWITCH.rawValue == parameters[0]) {
-                                self.app = XCUIApplication(bundleIdentifier: parameters[1])
-                                self.app.launch()
-                            }
-                            if(actionsEnum.STOP.rawValue == parameters[0]) {
-                                self.app = XCUIApplication(bundleIdentifier: parameters[1])
-                                self.app.terminate()
-                            }
+                            
+                        } else {
+                            self.resultElement["message"] = "missing app action"
+                            self.resultElement["status"] = -41
                         }
                         break
                     case actionsEnum.INFO.rawValue:
+                        if(self.app != nil) {
+                            self.driverInfoBase()
+                            self.resultElement["message"] = "device capabilities"
+                            self.resultElement["status"] = 0
+                            self.resultElement["id"] = self.app.identifier
+                            self.resultElement["model"] = "simulator"
+                            self.resultElement["manufacturer"] = "apple"
+                            self.resultElement["brand"] = "apple"
+                            self.resultElement["version"] = "1.0.0"
+                            self.resultElement["bluetoothName"] = self.app.label
+                        } else {
+                            self.resultElement["info"] = "no app running"
+                            self.resultElement["status"] = -99
+                        }
                         break
                     default:
+                        self.resultElement["status"] = -12
+                        self.resultElement["message"] = "unknow command " + action
                         break
                     }
             }
@@ -325,7 +397,7 @@ class atsiosUITests: XCTestCase {
                 options: []
                 ),
                 let theJSONText = String(data: theJSONData,
-                                         encoding: String.Encoding.ascii) {
+                                         encoding: String.Encoding.utf8) {
                 sendBody(Data(theJSONText.utf8))
                 sendBody(Data())
             }
