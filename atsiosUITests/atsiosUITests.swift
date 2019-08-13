@@ -66,7 +66,7 @@ class atsiosUITests: XCTestCase {
     var udpClient: UDPClient!
     var currentAppIdentifier: String = ""
     var allElements: [UIElement] = [UIElement]()
-    var resultElement: [(String,String)] = [(String,String)]()
+    var resultElement: [[String:String]] = [[String:String]]()
     
     var continueExecution = true
     
@@ -108,6 +108,8 @@ class atsiosUITests: XCTestCase {
             startResponse: ((String, [(String, String)]) -> Void),
             sendBody: ((Data) -> Void)
             ) in
+            // Start HTTP response
+            startResponse("200 OK", [])
             let query_String = environ["PATH_INFO"]! as! String
             let action = query_String.replacingOccurrences(of: "/", with: "")
             var parameters: [String] = [String]()
@@ -126,26 +128,34 @@ class atsiosUITests: XCTestCase {
             }
         
             if(action == "") {
-                self.resultElement.append(("type","Error"))
-                self.resultElement.append(("status","1"))
-                self.resultElement.append(("message","no action founded"))
+                self.resultElement.append(["type":"Error"])
+                self.resultElement.append(["status":"1"])
+                self.resultElement.append(["message":"No action founded"])
             } else {
-                self.resultElement = [(String,String)]()
+                self.resultElement = [[String:String]]()
                 switch action {
                     case actionsEnum.DRIVER.rawValue:
                         if(parameters.count > 0) {
                             if(actionsEnum.START.rawValue == parameters[0]) {
+                                XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
+                                XCUIDevice.shared.press(.home)
+                                //open simulator and unlock screen
                             }
                             if(actionsEnum.STOP.rawValue == parameters[0]) {
+                                if(self.app != nil){
+                                    self.app.terminate()
+                                }
+                                XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
+                                //close all apps
                             }
                             if(actionsEnum.QUIT.rawValue == parameters[0]) {
                                 self.tearDown()
                             }
                             
-                            self.resultElement.append(("type",action))
-                            self.resultElement.append(("status","0"))
+                            self.resultElement.append(["type":action])
+                            self.resultElement.append(["status":"0"])
+                            self.resultElement.append(["screenCapturePort":"8080"])
                             self.driverInfoBase()
-                            self.resultElement.append(("screenCapturePort","8080"))
                         }
                         break
                     case actionsEnum.BUTTON.rawValue:
@@ -164,6 +174,9 @@ class atsiosUITests: XCTestCase {
                         break
                     case actionsEnum.CAPTURE.rawValue:
                         self.allElements = []
+                        if(self.app == nil) {
+                            break
+                        }
                         let debugDescriptionTable = self.app.debugDescription.split { $0.isNewline }
                         for line in debugDescriptionTable {
                             let trimmedString = line.trimmingCharacters(in: .whitespaces)
@@ -218,6 +231,7 @@ class atsiosUITests: XCTestCase {
                                 )
                             }
                         }
+                        self.resultElement.append(["message": self.convertIntoJSONString(arrayObject: self.allElements)])
                         break
                     case actionsEnum.ELEMENT.rawValue:
                         if(parameters.count > 1) {
@@ -285,9 +299,9 @@ class atsiosUITests: XCTestCase {
                             if(actionsEnum.START.rawValue == parameters[0]) {
                                 self.app = XCUIApplication(bundleIdentifier: parameters[1])
                                 self.app.launch();
-                                self.resultElement.append(("type",action))
-                                self.resultElement.append(("status","0"))
-                                self.resultElement.append(("icon",""))
+                                self.resultElement.append(["type":action])
+                                self.resultElement.append(["status":"0"])
+                                self.resultElement.append(["icon":""])
                             }
                             if(actionsEnum.SWITCH.rawValue == parameters[0]) {
                                 self.app = XCUIApplication(bundleIdentifier: parameters[1])
@@ -306,7 +320,8 @@ class atsiosUITests: XCTestCase {
                     }
             }
             
-            startResponse("200 OK", self.resultElement)
+            
+            sendBody(Data(self.stringify(json: self.resultElement).utf8))
             sendBody(Data())
         }
         
@@ -329,6 +344,9 @@ class atsiosUITests: XCTestCase {
         fieldValue = fieldValue.replacingOccurrences(of: "%22", with: "'")
         fieldValue = fieldValue.replacingOccurrences(of: "%20", with: " ")
         let predicate = NSPredicate(format: "\(parameter) == '\(fieldValue)'")
+        if(self.app == nil) {
+            return nil
+        }
         let elem = self.app.descendants(matching: .any).element(matching: predicate)
         if(elem.exists) {
             return elem.firstMatch
@@ -349,15 +367,21 @@ class atsiosUITests: XCTestCase {
         return ""
     }
     
-    func convertIntoJSONString(arrayObject: [String:String]) -> String {
-        do {
-            let jsonEncoder = JSONEncoder()
-            let jsonData = try jsonEncoder.encode(arrayObject)
-            let json = String(data: jsonData, encoding: String.Encoding.utf8) ?? "no values"
-            return json
-        } catch let error as NSError {
-            print("Array convertIntoJSON - \(error.description)")
+    func stringify(json: Any, prettyPrinted: Bool = false) -> String {
+        var options: JSONSerialization.WritingOptions = []
+        if prettyPrinted {
+            options = JSONSerialization.WritingOptions.prettyPrinted
         }
+        
+        do {
+            let data = try JSONSerialization.data(withJSONObject: json, options: options)
+            if let string = String(data: data, encoding: String.Encoding.utf8) {
+                return string
+            }
+        } catch {
+            print(error)
+        }
+        
         return ""
     }
     
@@ -385,15 +409,15 @@ class atsiosUITests: XCTestCase {
     }
     
     func driverInfoBase() {
-        self.resultElement.append(("os","ios"))
-        self.resultElement.append(("driverVersion","1.0.0"))
-        self.resultElement.append(("systemName","ios"))
-        self.resultElement.append(("deviceWidth","100"))
-        self.resultElement.append(("deviceHeight","100"))
-        self.resultElement.append(("channelWidth","100"))
-        self.resultElement.append(("channelHeight","100"))
-        self.resultElement.append(("channelX","100"))
-        self.resultElement.append(("channelY","100"))
+        self.resultElement.append(["os":"ios"])
+        self.resultElement.append(["driverVersion":"1.0.0"])
+        self.resultElement.append(["systemName":"ios"])
+        self.resultElement.append(["deviceWidth":"100"])
+        self.resultElement.append(["deviceHeight":"100"])
+        self.resultElement.append(["channelWidth":"100"])
+        self.resultElement.append(["channelHeight":"100"])
+        self.resultElement.append(["channelX":"100"])
+        self.resultElement.append(["channelY":"100"])
     }
     
     func testExecuteCommand() {
