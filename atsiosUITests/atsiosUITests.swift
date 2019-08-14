@@ -12,23 +12,18 @@ import Embassy
 import EnvoyAmbassador
 import SwiftSocket
 
-struct UIElement:Codable {
-    var ElementTypeString: String
-    var Value: String
-    var PlaceHolderValue: String
-    var Label: String
-    var Identifier: String
-    var X: Float
-    var Y: Float
-    var Width: Float
-    var Height: Float
-    var UId: String
-}
-
-struct ResultElement:Codable {
-    var type: String
-    var status: String
-    var message: String
+struct UIElement: Codable {
+    let id: String
+    let tag: String
+    let clikable: Bool
+    let x: Int
+    let y: Int
+    let width: Int
+    let height: Int
+    var children: [UIElement]?
+    var attributes: [String:String]
+    let channelY: Int?
+    let channelHeight: Int?
 }
 
 enum actionsEnum: String {
@@ -65,7 +60,7 @@ class atsiosUITests: XCTestCase {
     var app: XCUIApplication!
     var udpClient: UDPClient!
     var currentAppIdentifier: String = ""
-    var allElements: [UIElement] = [UIElement]()
+    var allElements: UIElement? = nil
     var resultElement: [String: Any] = [:]
     
     var continueExecution = true
@@ -83,9 +78,187 @@ class atsiosUITests: XCTestCase {
 
     override func setUp() {
         super.setUp()
+        
+        
+        XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
+        
         setupWebApp()
         setupApp()
+        
         //self.udpClient = UDPClient(address: "www.apple.com", port: 80)
+    }
+    
+    func getEnumStringValue(rawValue: UInt) -> String {
+        switch rawValue {
+        case 0:
+            return "any"
+        case 1:
+            return "other"
+        case 2:
+            return "application"
+        case 3:
+            return "group"
+        case 4:
+            return "window"
+        case 5:
+            return "sheet"
+        case 6:
+            return "drawer"
+        case 7:
+            return "alert"
+        case 8:
+            return "dialog"
+        case 9:
+            return "button"
+        case 10:
+            return "radioButton"
+        case 11:
+            return "radioGrouo"
+        case 12:
+            return "checkBox"
+        case 13:
+            return "disclosureTriangle"
+        case 14:
+            return "popUpButton"
+        case 15:
+            return "comboBox"
+        case 16:
+            return "menuButton"
+        case 17:
+            return "toolbarButton"
+        case 18:
+            return "popOver"
+        case 19:
+            return "keyboard"
+        case 20:
+            return "key"
+        case 21:
+            return "navigationBar"
+        case 22:
+            return "tabBar"
+        case 23:
+            return "tabGroup"
+        case 24:
+            return "toolBar"
+        case 25:
+            return "statusBar"
+        case 26:
+            return "table"
+        case 27:
+            return "tableRow"
+        case 28:
+            return "tableColumn"
+        case 29:
+            return "outline"
+        case 30:
+            return "outlineRow"
+        case 31:
+            return "browser"
+        case 32:
+            return "collectionView"
+        case 33:
+            return "slider"
+        case 34:
+            return "pageIndicator"
+        case 35:
+            return "progressIndicator"
+        case 36:
+            return "activityIndicator"
+        case 37:
+            return "segmentedControl"
+        case 38:
+            return "picker"
+        case 39:
+            return "pickerWheel"
+        case 40:
+            return "switch"
+        case 41:
+            return "toggle"
+        case 42:
+            return "link"
+        case 43:
+            return "image"
+        case 44:
+            return "icon"
+        case 45:
+            return "searchField"
+        case 46:
+            return "scrollView"
+        case 47:
+            return "scrollBar"
+        case 48:
+            return "staticText"
+        case 49:
+            return "textField"
+        case 50:
+            return "secureTextField"
+        case 51:
+            return "datePicker"
+        case 52:
+            return "textView"
+        case 53:
+            return "menu"
+        case 54:
+            return "menuItem"
+        case 55:
+            return "menuBar"
+        case 56:
+            return "menuBarItem"
+        case 57:
+            return "map"
+        case 58:
+            return "webView"
+        case 59:
+            return "incrementArrow"
+        case 60:
+            return "decrementArrow"
+        case 61:
+            return "timeline"
+        case 62:
+            return "ratingIndicator"
+        case 63:
+            return "valueIndicator"
+        case 64:
+            return "splitGroup"
+        case 65:
+            return "splitter"
+        case 66:
+            return "relevanceIndicator"
+        case 67:
+            return "colorWell"
+        case 68:
+            return "helpTag"
+        case 69:
+            return "matte"
+        case 70:
+            return "dockItem"
+        case 71:
+            return "ruler"
+        case 72:
+            return "rulerMarker"
+        case 73:
+            return "grid"
+        case 74:
+            return "levelIndicator"
+        case 75:
+            return "cell"
+        case 76:
+            return "layoutArea"
+        case 77:
+            return "layoutItem"
+        case 78:
+            return "handle"
+        case 79:
+            return "stepper"
+        case 80:
+            return "tab"
+        case 81:
+            return "touchBar"
+        case 82:
+            return "statusItem"
+        default:
+            return "any"
+        }
     }
     
     func setupUdpClient() {
@@ -195,65 +368,49 @@ class atsiosUITests: XCTestCase {
                         }
                         break
                     case actionsEnum.CAPTURE.rawValue:
-                        self.allElements = []
+                        self.allElements = nil
                         if(self.app == nil) {
+                            self.resultElement["message"] = "missing button action"
+                            self.resultElement["status"] = -99
                             break
                         }
-                        let debugDescriptionTable = self.app.debugDescription.split { $0.isNewline }
-                        for line in debugDescriptionTable {
-                            let trimmedString = line.trimmingCharacters(in: .whitespaces)
-                            let trimmerStringLower = trimmedString.lowercased()
-                            let match = self.applicationControls.filter { trimmerStringLower.starts(with: $0.lowercased()) }.count != 0
-                            if(match && !line.contains("pid:")) {
-                                var currentElement = trimmedString.split(separator: ",")
-                                let type = currentElement[0].replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "(main)", with: "")
-                                let uid = currentElement[1].replacingOccurrences(of: " ", with: "")
-                                let x = currentElement[2].replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "{", with: "").replacingOccurrences(of: "}", with: "")
-                                let y = currentElement[3].replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "{", with: "").replacingOccurrences(of: "}", with: "")
-                                let width = currentElement[4].replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "{", with: "").replacingOccurrences(of: "}", with: "")
-                                let height = currentElement[5].replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "{", with: "").replacingOccurrences(of: "}", with: "")
-                                var label = ""
-                                var id = ""
-                                var placeHolderValue = ""
-                                var value = ""
-                                
-                                if(currentElement.count > 6) {
-                                    for index in 6...currentElement.count-1 {
-                                        var currentElemIdentifiers = currentElement[index].split(separator: ":")
-                                        let identifier = currentElemIdentifiers[0].replacingOccurrences(of: " ", with: "")
-                                        if(identifier.lowercased() == "label") {
-                                            label = currentElemIdentifiers[1].replacingOccurrences(of: "'", with: "").trimmingCharacters(in: .whitespaces)
-                                        }
-                                        
-                                        if(identifier.lowercased() == "placeholdervalue") {
-                                            placeHolderValue = currentElemIdentifiers[1].replacingOccurrences(of: "'", with: "").trimmingCharacters(in: .whitespaces)
-                                        }
-                                        
-                                        if(identifier.lowercased() == "value") {
-                                            value = currentElemIdentifiers[1].replacingOccurrences(of: "'", with: "").trimmingCharacters(in: .whitespaces)
-                                        }
-                                        
-                                        if(identifier.lowercased() == "identifier") {
-                                            id = currentElemIdentifiers[1].replacingOccurrences(of: "'", with: "").trimmingCharacters(in: .whitespaces)
-                                        }
-                                    }
-                                }
-                                
-                                self.allElements.append(UIElement(
-                                    ElementTypeString: type,
-                                    Value: value,
-                                    PlaceHolderValue: placeHolderValue,
-                                    Label: label,
-                                    Identifier: id,
-                                    X: Float(x)!,
-                                    Y: Float(y)!,
-                                    Width: Float(width)!,
-                                    Height: Float(height)!,
-                                    UId: uid)
-                                )
-                            }
+                        
+                        let appNode = self.app.children(matching: .any).firstMatch
+                        var rootNode = UIElement(
+                            id: UUID().uuidString,
+                            tag: "root",
+                            clikable: false,
+                            x: 0,
+                            y: 0,
+                            width: Int(appNode.frame.width),
+                            height: Int(appNode.frame.height),
+                            children: [UIElement(
+                                id: UUID().uuidString,
+                                tag: "FrameLayout",
+                                clikable: false,
+                                x: 0,
+                                y: 0,
+                                width: Int(appNode.frame.width),
+                                height: Int(appNode.frame.height),
+                                children: self.getChilds(parentNode: appNode),
+                                attributes: [:],
+                                channelY: nil,
+                                channelHeight: nil
+                                )],
+                            attributes: [:],
+                            channelY: 0,
+                            channelHeight: Int(appNode.frame.height)
+                        )
+                        
+                        if(rootNode.children?.count == 1) {
+                            rootNode.children?[0].attributes["checkable"] = "false"
+                            rootNode.children?[0].attributes["enable"] = "true"
+                            rootNode.children?[0].attributes["selected"] = "false"
+                            rootNode.children?[0].attributes["editable"] = "false"
+                            rootNode.children?[0].attributes["numeric"] = "false"
                         }
-                        self.resultElement["message"] = self.convertIntoJSONString(arrayObject: self.allElements)
+                    
+                        self.resultElement["message"] = self.convertIntoJSONString(arrayObject: rootNode)
                         break
                     case actionsEnum.ELEMENT.rawValue:
                         if(parameters.count > 1) {
@@ -347,7 +504,7 @@ class atsiosUITests: XCTestCase {
                             } else {
                                 if(actionsEnum.SWITCH.rawValue == parameters[0]) {
                                     self.app = XCUIApplication(bundleIdentifier: parameters[1])
-                                    self.app.launch()
+                                    self.app.activate()
                                     self.resultElement["message"] = "switch app " + parameters[1]
                                     self.resultElement["status"] = 0
                                 } else {
@@ -370,20 +527,15 @@ class atsiosUITests: XCTestCase {
                         }
                         break
                     case actionsEnum.INFO.rawValue:
-                        if(self.app != nil) {
-                            self.driverInfoBase()
-                            self.resultElement["message"] = "device capabilities"
-                            self.resultElement["status"] = 0
-                            self.resultElement["id"] = self.app.identifier
-                            self.resultElement["model"] = "simulator"
-                            self.resultElement["manufacturer"] = "apple"
-                            self.resultElement["brand"] = "apple"
-                            self.resultElement["version"] = "1.0.0"
-                            self.resultElement["bluetoothName"] = self.app.label
-                        } else {
-                            self.resultElement["info"] = "no app running"
-                            self.resultElement["status"] = -99
-                        }
+                        self.driverInfoBase()
+                        self.resultElement["message"] = "device capabilities"
+                        self.resultElement["status"] = 0
+                        self.resultElement["id"] = "simulator id"
+                        self.resultElement["model"] = "simulator"
+                        self.resultElement["manufacturer"] = "apple"
+                        self.resultElement["brand"] = "apple"
+                        self.resultElement["version"] = "1.0.0"
+                        self.resultElement["bluetoothName"] = "bluetoothName"
                         break
                     default:
                         self.resultElement["status"] = -12
@@ -433,7 +585,40 @@ class atsiosUITests: XCTestCase {
         }
     }
     
-    func convertIntoJSONString(arrayObject: [UIElement]) -> String {
+    func getChilds(parentNode: XCUIElement) -> [UIElement] {
+        let parentNodeChilds = parentNode.children(matching: .any)
+        var childs: [UIElement] = [UIElement]()
+        for elem in parentNodeChilds.allElementsBoundByIndex {
+            
+            var attr: [String:String] = [:]
+            attr["checkable"] = elem.elementType.rawValue == 12 ? "true" : "false"
+            attr["enabled"] = String(elem.isEnabled)
+            attr["selected"] = String(elem.isSelected)
+            attr["editable"] = String(elem.isHittable)
+            attr["numeric"] = elem.elementType.rawValue == 49 ? "true" : "false"
+            attr["viewId"] = elem.identifier
+            attr["description"] = elem.label
+            attr["text"] = elem.value as? String
+            
+            childs.append(UIElement(
+                    id: UUID().uuidString,
+                    tag: self.getEnumStringValue(rawValue: elem.elementType.rawValue),
+                    clikable: elem.isHittable,
+                    x: Int(elem.frame.minX),
+                    y: Int(elem.frame.minY),
+                    width: Int(elem.frame.width),
+                    height: Int(elem.frame.height),
+                    children: self.getChilds(parentNode: elem),
+                    attributes: attr,
+                    channelY: nil,
+                    channelHeight: nil
+                )
+            )
+        }
+        return childs
+    }
+    
+    func convertIntoJSONString(arrayObject: UIElement) -> String {
         do {
             let jsonEncoder = JSONEncoder()
             let jsonData = try jsonEncoder.encode(arrayObject)
