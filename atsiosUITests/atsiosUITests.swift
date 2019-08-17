@@ -16,14 +16,14 @@ struct UIElement: Codable {
     let id: String
     let tag: String
     let clikable: Bool
-    let x: Int
-    let y: Int
-    let width: Int
-    let height: Int
+    let x: Double
+    let y: Double
+    let width: Double
+    let height: Double
     var children: [UIElement]?
     var attributes: [String:String]
-    let channelY: Int?
-    let channelHeight: Int?
+    let channelY: Double?
+    let channelHeight: Double?
 }
 
 enum actionsEnum: String {
@@ -271,11 +271,18 @@ class atsiosUITests: XCTestCase {
         udpClient = UDPClient(address: "www.apple.com", port: 80)
     }
     
-
     // setup the Embassy web server for testing
     private func setupWebApp() {
         let loop = try! SelectorEventLoop(selector: try! KqueueSelector())
-        let server = DefaultHTTPServer(eventLoop: loop, port: 8080) {
+        let bundles = Bundle.allBundles
+        var port = 8080
+        for bundle in bundles {
+            let val = bundle.object(forInfoDictionaryKey: "CustomPort")
+            if val != nil {
+                port = Int(bundle.object(forInfoDictionaryKey: "CustomPort") as! String) ?? 8080
+            }
+        }
+        let server = DefaultHTTPServer(eventLoop: loop, port: port) {
             (
             environ: [String: Any],
             startResponse: ((String, [(String, String)]) -> Void),
@@ -370,47 +377,47 @@ class atsiosUITests: XCTestCase {
                     case actionsEnum.CAPTURE.rawValue:
                         self.allElements = nil
                         if(self.app == nil) {
-                            self.resultElement["message"] = "missing button action"
+                            self.resultElement["message"] = "no app has been launched"
                             self.resultElement["status"] = -99
                             break
                         }
                         
-                        let appNode = self.app.children(matching: .any).firstMatch
-                        var rootNode = UIElement(
-                            id: UUID().uuidString,
+                        let description = self.app.debugDescription
+                        var descriptionTable = description.split(separator: "\n")
+                        var leveledTable: [(Int,String)] = [(Int,String)]()
+                        for index in 3...descriptionTable.count-8 {
+                            //no traitment of line that are not reference composants
+                            var currentLine = String(descriptionTable[index])
+                            var blankSpacesAtStart = 0
+                            for char in currentLine.characters.indices {
+                                if(currentLine[char] == " ") {
+                                    blankSpacesAtStart += 1
+                                } else {
+                                    break
+                                }
+                            }
+                            let level = (blankSpacesAtStart / 2) - 1
+                            leveledTable.append((level, currentLine))
+                        }
+                        
+                        var rootLine = leveledTable[0].1.split(separator: ",")
+                        let levelUID = UUID().uuidString
+                        
+                        let rootNode = UIElement(
+                            id: levelUID,
                             tag: "root",
                             clikable: false,
-                            x: 0,
-                            y: 0,
-                            width: Int(appNode.frame.width),
-                            height: Int(appNode.frame.height),
-                            children: [UIElement(
-                                id: UUID().uuidString,
-                                tag: "FrameLayout",
-                                clikable: false,
-                                x: 0,
-                                y: 0,
-                                width: Int(appNode.frame.width),
-                                height: Int(appNode.frame.height),
-                                children: self.getChilds(parentNode: appNode),
-                                attributes: [:],
-                                channelY: nil,
-                                channelHeight: nil
-                                )],
+                            x: Double(self.cleanString(input: String(rootLine[2]))) as! Double,
+                            y: Double(self.cleanString(input: String(rootLine[3]))) as! Double,
+                            width: Double(self.cleanString(input: String(rootLine[4]))) as! Double,
+                            height: Double(self.cleanString(input: String(rootLine[5]))) as! Double,
+                            children: self.getChildrens(currentLevel: 1, currentIndex: 0, endedIndex: leveledTable.count-1, leveledTable: leveledTable),
                             attributes: [:],
                             channelY: 0,
-                            channelHeight: Int(appNode.frame.height)
+                            channelHeight: Double(self.cleanString(input: String(rootLine[5])))
                         )
-                        
-                        if(rootNode.children?.count == 1) {
-                            rootNode.children?[0].attributes["checkable"] = "false"
-                            rootNode.children?[0].attributes["enable"] = "true"
-                            rootNode.children?[0].attributes["selected"] = "false"
-                            rootNode.children?[0].attributes["editable"] = "false"
-                            rootNode.children?[0].attributes["numeric"] = "false"
-                        }
-                    
-                        self.resultElement["message"] = self.convertIntoJSONString(arrayObject: rootNode)
+
+                        self.resultElement["data"] = self.convertIntoJSONString(arrayObject: rootNode)
                         break
                     case actionsEnum.ELEMENT.rawValue:
                         if(parameters.count > 1) {
@@ -562,6 +569,47 @@ class atsiosUITests: XCTestCase {
         loop.runForever()
     }
     
+    func getChildrens(currentLevel: Int, currentIndex: Int, endedIndex: Int, leveledTable: [(Int,String)]) -> [UIElement] {
+        var tableToReturn: [UIElement] = [UIElement]()
+        for line in currentIndex...leveledTable.count-1 {
+            let levelUID = UUID().uuidString
+            let currentLine = leveledTable[line]
+            let splittedLine = currentLine.1.split(separator: ",")
+            if(currentLine.0 == currentLevel) {
+                var endIn = line
+                for el in line...leveledTable.count-1 {
+                    if(leveledTable[el].0 >= currentLevel) {
+                        endIn += 1
+                    } else {
+                        break
+                    }
+                }
+                tableToReturn.append(UIElement(
+                    id: levelUID,
+                    tag: self.cleanString(input: String(splittedLine[0])),
+                    clikable: true,
+                    x: Double(self.cleanString(input: String(splittedLine[2]))) as! Double,
+                    y: Double(self.cleanString(input: String(splittedLine[3]))) as! Double,
+                    width: Double(self.cleanString(input: String(splittedLine[4]))) as! Double,
+                    height: Double(self.cleanString(input: String(splittedLine[5]))) as! Double,
+                    children: self.getChildrens(currentLevel: currentLevel+1, currentIndex: line+1, endedIndex: endIn, leveledTable: leveledTable),
+                    attributes: [:],
+                    channelY: nil,
+                    channelHeight: nil
+                ))
+            } else if(endedIndex == line) {
+                return tableToReturn
+            }
+        }
+        return tableToReturn
+    }
+    
+    func cleanString(input: String) -> String {
+        var output = input.replacingOccurrences(of: "{", with: "")
+        output = output.replacingOccurrences(of: "}", with: "")
+        return output.replacingOccurrences(of: " ", with: "")
+    }
+    
     func tapCoordinate(at xCoordinate: Double, and yCoordinate: Double) {
         let normalized = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
         let coordinate = normalized.withOffset(CGVector(dx: xCoordinate, dy: yCoordinate))
@@ -583,39 +631,6 @@ class atsiosUITests: XCTestCase {
         } else {
             return nil
         }
-    }
-    
-    func getChilds(parentNode: XCUIElement) -> [UIElement] {
-        let parentNodeChilds = parentNode.children(matching: .any)
-        var childs: [UIElement] = [UIElement]()
-        for elem in parentNodeChilds.allElementsBoundByIndex {
-            
-            var attr: [String:String] = [:]
-            attr["checkable"] = elem.elementType.rawValue == 12 ? "true" : "false"
-            attr["enabled"] = String(elem.isEnabled)
-            attr["selected"] = String(elem.isSelected)
-            attr["editable"] = String(elem.isHittable)
-            attr["numeric"] = elem.elementType.rawValue == 49 ? "true" : "false"
-            attr["viewId"] = elem.identifier
-            attr["description"] = elem.label
-            attr["text"] = elem.value as? String
-            
-            childs.append(UIElement(
-                    id: UUID().uuidString,
-                    tag: self.getEnumStringValue(rawValue: elem.elementType.rawValue),
-                    clikable: elem.isHittable,
-                    x: Int(elem.frame.minX),
-                    y: Int(elem.frame.minY),
-                    width: Int(elem.frame.width),
-                    height: Int(elem.frame.height),
-                    children: self.getChilds(parentNode: elem),
-                    attributes: attr,
-                    channelY: nil,
-                    channelHeight: nil
-                )
-            )
-        }
-        return childs
     }
     
     func convertIntoJSONString(arrayObject: UIElement) -> String {
@@ -663,6 +678,7 @@ class atsiosUITests: XCTestCase {
     // set up XCUIApplication
     private func setupApp() {
         app = XCUIApplication()
+        let port = 8080
         app.launchEnvironment["RESET_LOGIN"] = "1"
         app.launchEnvironment["ENVOY_BASEURL"] = "http://localhost:\(port)"
     }
