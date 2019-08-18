@@ -282,14 +282,14 @@ class atsiosUITests: XCTestCase {
                 port = Int(bundle.object(forInfoDictionaryKey: "CustomPort") as! String) ?? 8080
             }
         }
-        let server = DefaultHTTPServer(eventLoop: loop, port: port) {
+        let server = DefaultHTTPServer(eventLoop: loop, interface: "0.0.0.0", port: port) {
             (
             environ: [String: Any],
             startResponse: ((String, [(String, String)]) -> Void),
             sendBody: ((Data) -> Void)
             ) in
             // Start HTTP response
-            startResponse("200 OK", [])
+            startResponse("200 OK", [("Content-Type", "application/json")])
             let query_String = environ["PATH_INFO"]! as! String
             let action = query_String.replacingOccurrences(of: "/", with: "")
             var parameters: [String] = [String]()
