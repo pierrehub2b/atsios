@@ -578,7 +578,7 @@ class atsiosUITests: XCTestCase {
             if(currentLine.0 == currentLevel) {
                 var endIn = line
                 for el in line...leveledTable.count-1 {
-                    if(leveledTable[el].0 >= currentLevel) {
+                    if(leveledTable[el].0 >= currentLevel+1) {
                         endIn += 1
                     } else {
                         break
