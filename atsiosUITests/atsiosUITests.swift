@@ -274,22 +274,34 @@ class atsiosUITests: XCTestCase {
     // setup the Embassy web server for testing
     private func setupWebApp() {
         let loop = try! SelectorEventLoop(selector: try! KqueueSelector())
-        let bundles = Bundle.allBundles
+        
+        
+        var portNum = 8080
+        for i in 8080..<65000 {
+            let (isFree, _) = checkTcpPortForListen(port: UInt16(i))
+            if isFree == true {
+                portNum = i
+                break;
+            }
+        }
+        
+        /*let bundles = Bundle.allBundles
         var port = 8080
         for bundle in bundles {
             let val = bundle.object(forInfoDictionaryKey: "CustomPort")
             if val != nil {
                 port = Int(bundle.object(forInfoDictionaryKey: "CustomPort") as! String) ?? 8080
             }
-        }
-        let server = DefaultHTTPServer(eventLoop: loop, port: port) {
+        }*/
+        
+        let server = DefaultHTTPServer(eventLoop: loop, interface: "0.0.0.0", port: portNum) {
             (
             environ: [String: Any],
             startResponse: ((String, [(String, String)]) -> Void),
             sendBody: ((Data) -> Void)
             ) in
             // Start HTTP response
-            startResponse("200 OK", [])
+            startResponse("200 OK", [("Content-Type", "application/json")])
             let query_String = environ["PATH_INFO"]! as! String
             let action = query_String.replacingOccurrences(of: "/", with: "")
             var parameters: [String] = [String]()
@@ -564,7 +576,7 @@ class atsiosUITests: XCTestCase {
         
         // Start HTTP server to listen on the port
         try! server.start()
-        
+        fputs("atsios started on port " + String(portNum) + "\n", stderr)
         // Run event loop
         loop.runForever()
     }
@@ -703,6 +715,46 @@ class atsiosUITests: XCTestCase {
         while continueExecution {
             
         }
+    }
+    
+    func checkTcpPortForListen(port: in_port_t) -> (Bool, descr: String) {
+        
+        let socketFileDescriptor = socket(AF_INET, SOCK_STREAM, 0)
+        if socketFileDescriptor == -1 {
+            return (false, "SocketCreationFailed, \(descriptionOfLastError())")
+        }
+        
+        var addr = sockaddr_in()
+        let sizeOfSockkAddr = MemoryLayout<sockaddr_in>.size
+        addr.sin_len = __uint8_t(sizeOfSockkAddr)
+        addr.sin_family = sa_family_t(AF_INET)
+        addr.sin_port = Int(OSHostByteOrder()) == OSLittleEndian ? _OSSwapInt16(port) : port
+        addr.sin_addr = in_addr(s_addr: inet_addr("0.0.0.0"))
+        addr.sin_zero = (0, 0, 0, 0, 0, 0, 0, 0)
+        var bind_addr = sockaddr()
+        memcpy(&bind_addr, &addr, Int(sizeOfSockkAddr))
+        
+        if Darwin.bind(socketFileDescriptor, &bind_addr, socklen_t(sizeOfSockkAddr)) == -1 {
+            let details = descriptionOfLastError()
+            release(socket: socketFileDescriptor)
+            return (false, "\(port), BindFailed, \(details)")
+        }
+        if listen(socketFileDescriptor, SOMAXCONN ) == -1 {
+            let details = descriptionOfLastError()
+            release(socket: socketFileDescriptor)
+            return (false, "\(port), ListenFailed, \(details)")
+        }
+        release(socket: socketFileDescriptor)
+        return (true, "\(port) is free for use")
+    }
+    
+    func release(socket: Int32) {
+        Darwin.shutdown(socket, SHUT_RDWR)
+        close(socket)
+    }
+    
+    func descriptionOfLastError() -> String {
+        return String.init(cString: (UnsafePointer(strerror(errno))))
     }
 
 }
