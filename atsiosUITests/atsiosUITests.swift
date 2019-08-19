@@ -56,7 +56,7 @@ enum deviceButtons: String {
 
 class atsiosUITests: XCTestCase {
     
-    let port = 8080
+    var port = 8080
     var app: XCUIApplication!
     var udpClient: UDPClient!
     var currentAppIdentifier: String = ""
@@ -275,26 +275,15 @@ class atsiosUITests: XCTestCase {
     private func setupWebApp() {
         let loop = try! SelectorEventLoop(selector: try! KqueueSelector())
         
-        
-        var portNum = 8080
         for i in 8080..<65000 {
             let (isFree, _) = checkTcpPortForListen(port: UInt16(i))
             if isFree == true {
-                portNum = i
+                self.port = i
                 break;
             }
         }
         
-        /*let bundles = Bundle.allBundles
-        var port = 8080
-        for bundle in bundles {
-            let val = bundle.object(forInfoDictionaryKey: "CustomPort")
-            if val != nil {
-                port = Int(bundle.object(forInfoDictionaryKey: "CustomPort") as! String) ?? 8080
-            }
-        }*/
-        
-        let server = DefaultHTTPServer(eventLoop: loop, interface: "0.0.0.0", port: portNum) {
+        let server = DefaultHTTPServer(eventLoop: loop, interface: "0.0.0.0", port: self.port) {
             (
             environ: [String: Any],
             startResponse: ((String, [(String, String)]) -> Void),
@@ -576,9 +565,22 @@ class atsiosUITests: XCTestCase {
         
         // Start HTTP server to listen on the port
         try! server.start()
-        fputs("atsios started on port " + String(portNum) + "\n", stderr)
+        fputs("atsios started on port " + String(self.port) + "\n", stderr)
         // Run event loop
         loop.runForever()
+    }
+    
+    func matchingStrings(input: String, regex: String) -> [[String]] {
+        guard let regex = try? NSRegularExpression(pattern: regex, options: []) else { return [] }
+        let nsString = input as NSString
+        let results  = regex.matches(in: input, options: [], range: NSMakeRange(0, nsString.length))
+        return results.map { result in
+            (0..<result.numberOfRanges).map {
+                result.range(at: $0).location != NSNotFound
+                    ? nsString.substring(with: result.range(at: $0))
+                    : ""
+            }
+        }
     }
     
     func getChildrens(currentLevel: Int, currentIndex: Int, endedIndex: Int, leveledTable: [(Int,String)]) -> [UIElement] {
@@ -587,15 +589,44 @@ class atsiosUITests: XCTestCase {
             let levelUID = UUID().uuidString
             let currentLine = leveledTable[line]
             let splittedLine = currentLine.1.split(separator: ",")
-            if(currentLine.0 == currentLevel) {
-                var endIn = line
-                for el in line...leveledTable.count-1 {
+            if(currentLine.0 == currentLevel && endedIndex >= line) {
+                var endIn = line + 1
+                for el in endIn...leveledTable.count-1 {
                     if(leveledTable[el].0 >= currentLevel+1) {
                         endIn += 1
                     } else {
                         break
                     }
                 }
+                
+                var attr: [String: String] = [String: String]()
+                
+                var label = ""
+                var placeHolder = ""
+                var identifier = ""
+                let pattern = "'(.*?)'"
+                for str in splittedLine {
+                    if(str.contains("identifier")) {
+                        identifier = (self.matchingStrings(input: String(str), regex: pattern).first?[1])!
+                    }
+                    if(str.contains("label")) {
+                        label = (self.matchingStrings(input: String(str), regex: pattern).first?[1])!
+                    }
+                    if(str.contains("placeholderValue")) {
+                        placeHolder = (self.matchingStrings(input: String(str), regex: pattern).first?[1])!
+                    }
+                }
+                
+                
+                attr["text"] = label
+                attr["description"] = placeHolder
+                attr["checkable"] = String(self.cleanString(input: String(splittedLine[0])) == "checkbox")
+                attr["enabled"] = "true"
+                attr["viewId"] = identifier
+                attr["selected"] = "false"
+                attr["editable"] = "true"
+                attr["numeric"] = "false"
+                
                 tableToReturn.append(UIElement(
                     id: levelUID,
                     tag: self.cleanString(input: String(splittedLine[0])),
@@ -605,12 +636,10 @@ class atsiosUITests: XCTestCase {
                     width: Double(self.cleanString(input: String(splittedLine[4]))) as! Double,
                     height: Double(self.cleanString(input: String(splittedLine[5]))) as! Double,
                     children: self.getChildrens(currentLevel: currentLevel+1, currentIndex: line+1, endedIndex: endIn, leveledTable: leveledTable),
-                    attributes: [:],
+                    attributes: attr,
                     channelY: nil,
                     channelHeight: nil
                 ))
-            } else if(endedIndex == line) {
-                return tableToReturn
             }
         }
         return tableToReturn
@@ -690,9 +719,8 @@ class atsiosUITests: XCTestCase {
     // set up XCUIApplication
     private func setupApp() {
         app = XCUIApplication()
-        let port = 8080
         app.launchEnvironment["RESET_LOGIN"] = "1"
-        app.launchEnvironment["ENVOY_BASEURL"] = "http://localhost:\(port)"
+        app.launchEnvironment["ENVOY_BASEURL"] = "http://localhost:\(self.port)"
     }
     
     override func tearDown() {
