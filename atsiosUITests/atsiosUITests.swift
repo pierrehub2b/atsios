@@ -538,12 +538,12 @@ class atsiosUITests: XCTestCase {
                         self.driverInfoBase()
                         self.resultElement["message"] = "device capabilities"
                         self.resultElement["status"] = 0
-                        self.resultElement["id"] = "simulator id"
-                        self.resultElement["model"] = "simulator"
-                        self.resultElement["manufacturer"] = "apple"
-                        self.resultElement["brand"] = "apple"
-                        self.resultElement["version"] = "1.0.0"
-                        self.resultElement["bluetoothName"] = "bluetoothName"
+                        self.resultElement["id"] = UIDevice.current.identifierForVendor!.uuidString
+                        self.resultElement["model"] = UIDevice.current.name
+                        self.resultElement["manufacturer"] = "Apple"
+                        self.resultElement["brand"] = "Apple"
+                        self.resultElement["version"] = UIDevice.current.systemVersion
+                        self.resultElement["bluetoothName"] = ""
                         break
                     default:
                         self.resultElement["status"] = -12
