@@ -585,7 +585,7 @@ class atsiosUITests: XCTestCase {
         try! server.start()
         let address = getWiFiAddress()! + ":" + String(self.port)
         
-        fputs("ATSIOS_DRIVER_HOST:" + address + "\n", stderr)
+        fputs("ATSIOS_DRIVER_HOST=" + address + "\n", stderr)
         // Run event loop
         loop.runForever()
     }
