@@ -40,7 +40,7 @@ enum actionsEnum: String {
     case BUTTON = "button"
     case INFO = "info"
     case QUIT = "quit"
-    case EMPTY = "&empty"
+    case EMPTY = "&empty;"
 }
 
 enum deviceButtons: String {
@@ -448,10 +448,10 @@ class atsiosUITests: XCTestCase {
                                 self.resultElement["status"] = -22
                                 self.resultElement["message"] = "element not in the screen"
                             }
-                            if(element != nil || parameters.count > 3) {
+                            if(element != nil) {
                                 if(actionsEnum.INPUT.rawValue == parameters[1]) {
                                     let text = parameters[2]
-                                    if(element!.elementType.rawValue == 49 || element!.elementType.rawValue == 50) {
+                                    if(element!.elementType.rawValue == 49 || element!.elementType.rawValue == 50 || element!.elementType.rawValue == 45) {
                                         element?.tap()
                                         if(text == actionsEnum.EMPTY.rawValue) {
                                             let deleteString = String(repeating: XCUIKeyboardKey.delete.rawValue, count: (element?.value as? String)?.count ?? 0)
