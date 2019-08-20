@@ -54,6 +54,16 @@ enum deviceButtons: String {
     case ORIENTATION = "orientation"
 }
 
+struct Frame {
+    let label: String
+    let identifier: String
+    let placeHolderValue: String
+    let x: Double
+    let y: Double
+    let width: Double
+    let height: Double
+}
+
 class atsiosUITests: XCTestCase {
     
     var port = 8080
@@ -63,6 +73,7 @@ class atsiosUITests: XCTestCase {
     var allElements: UIElement? = nil
     var resultElement: [String: Any] = [:]
     var captureStruct: String = ""
+    var flatStruct: [String: Frame] = [:]
     
     var continueExecution = true
     
@@ -308,7 +319,7 @@ class atsiosUITests: XCTestCase {
                     }
                 }
             }
-            self.resultElement = [:] 
+            self.resultElement = [:]
             if(action == "") {
                 self.resultElement["status"] = -11
                 self.resultElement["message"] = "unknow command"
@@ -377,6 +388,7 @@ class atsiosUITests: XCTestCase {
                         break
                     case actionsEnum.CAPTURE.rawValue:
                         self.allElements = nil
+                        self.flatStruct = [:]
                         if(self.app == nil) {
                             self.resultElement["message"] = "no app has been launched"
                             self.resultElement["status"] = -99
@@ -422,12 +434,14 @@ class atsiosUITests: XCTestCase {
                         break
                     case actionsEnum.ELEMENT.rawValue:
                         if(parameters.count > 1) {
-                            var element = self.retrieveElement(parameter: "identifier", field: parameters[0])
-                            if(element == nil) {
-                                element = self.retrieveElement(parameter: "label", field: parameters[0])
-                            }
-                            if(element == nil) {
-                                element = self.retrieveElement(parameter: "placeholderValue", field: parameters[0])
+                            let flatElement = self.flatStruct[parameters[0]]
+                            var element: XCUIElement? = nil
+                            if(flatElement?.label != "") {
+                                element = self.retrieveElement(parameter: "label", field: flatElement!.label)
+                            } else if(flatElement?.identifier != "") {
+                                element = self.retrieveElement(parameter: "identifier", field: flatElement!.identifier)
+                            } else {
+                                element = self.retrieveElement(parameter: "placeholderValue", field: flatElement!.placeHolderValue)
                             }
                             if(element != nil && !element!.isHittable) {
                                 element = nil
@@ -631,19 +645,26 @@ class atsiosUITests: XCTestCase {
                 attr["editable"] = "true"
                 attr["numeric"] = "false"
                 
+                let x = Double(self.cleanString(input: String(splittedLine[2]))) as! Double
+                let y = Double(self.cleanString(input: String(splittedLine[3]))) as! Double
+                let width = Double(self.cleanString(input: String(splittedLine[4]))) as! Double
+                let height = Double(self.cleanString(input: String(splittedLine[5]))) as! Double
+            
                 tableToReturn.append(UIElement(
                     id: levelUID,
                     tag: self.cleanString(input: String(splittedLine[0])),
                     clickable: true,
-                    x: Double(self.cleanString(input: String(splittedLine[2]))) as! Double,
-                    y: Double(self.cleanString(input: String(splittedLine[3]))) as! Double,
-                    width: Double(self.cleanString(input: String(splittedLine[4]))) as! Double,
-                    height: Double(self.cleanString(input: String(splittedLine[5]))) as! Double,
+                    x: x,
+                    y: y,
+                    width: width,
+                    height: height,
                     children: self.getChildrens(currentLevel: currentLevel+1, currentIndex: line+1, endedIndex: endIn, leveledTable: leveledTable),
                     attributes: attr,
                     channelY: nil,
                     channelHeight: nil
                 ))
+                
+                flatStruct[levelUID] = Frame(label: label, identifier: identifier, placeHolderValue: placeHolder, x: x, y: y, width: width, height: height)
             }
         }
         return tableToReturn
