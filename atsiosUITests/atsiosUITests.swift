@@ -76,6 +76,12 @@ class atsiosUITests: XCTestCase {
     var flatStruct: [String: Frame] = [:]
     var thread: Thread! = nil
     
+    let osVersion = UIDevice.current.systemVersion
+    let model = UIDevice.current.name
+    let uid = UIDevice.current.identifierForVendor!.uuidString
+    let deviceWidth = UIScreen.main.bounds.width
+    let deviceHeight = UIScreen.main.bounds.height
+
     var continueExecution = true
     
     var applicationControls =
@@ -285,6 +291,7 @@ class atsiosUITests: XCTestCase {
     
     // setup the Embassy web server for testing
     private func setupWebApp() {
+        
         let loop = try! SelectorEventLoop(selector: try! KqueueSelector())
         
         for i in 8080..<65000 {
@@ -330,10 +337,12 @@ class atsiosUITests: XCTestCase {
                             if(actionsEnum.START.rawValue == parameters[0]) {
                                 XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
                                 XCUIDevice.shared.press(.home)
+                                
+                                self.driverInfoBase()
                                 self.resultElement["status"] = 0
                                 self.resultElement["screenCapturePort"] = 47633
                                 self.thread.start()
-                                self.driverInfoBase()
+                                
                             } else {
                                 if(actionsEnum.STOP.rawValue == parameters[0]) {
                                     if(self.app != nil){
@@ -553,11 +562,11 @@ class atsiosUITests: XCTestCase {
                         self.driverInfoBase()
                         self.resultElement["message"] = "device capabilities"
                         self.resultElement["status"] = 0
-                        self.resultElement["id"] = UIDevice.current.identifierForVendor!.uuidString
-                        self.resultElement["model"] = UIDevice.current.name
+                        self.resultElement["id"] = self.uid
+                        self.resultElement["model"] = self.model
                         self.resultElement["manufacturer"] = "Apple"
                         self.resultElement["brand"] = "Apple"
-                        self.resultElement["version"] = UIDevice.current.systemVersion
+                        self.resultElement["version"] = self.osVersion
                         self.resultElement["bluetoothName"] = ""
                         break
                     default:
@@ -584,9 +593,10 @@ class atsiosUITests: XCTestCase {
         
         // Start HTTP server to listen on the port
         try! server.start()
-        let address = getWiFiAddress()! + ":" + String(self.port)
         
-        fputs("ATSIOS_DRIVER_HOST=" + address + "\n", stderr)
+        let endPoint = getWiFiAddress()! + ":" + String(self.port)
+        fputs("ATSIOS_DRIVER_HOST=" + endPoint + "\n", stderr)
+        
         // Run event loop
         loop.runForever()
     }
@@ -758,13 +768,13 @@ class atsiosUITests: XCTestCase {
     func driverInfoBase() {
         self.resultElement["os"] = "ios"
         self.resultElement["driverVersion"] = "1.0.0"
-        self.resultElement["systemName"] = "simulator"
-        self.resultElement["deviceWidth"] = 100
-        self.resultElement["deviceHeight"] = 100
-        self.resultElement["channelWidth"] = 100
-        self.resultElement["channelHeight"] = 100
-        self.resultElement["channelX"] = 100
-        self.resultElement["channelY"] = 100
+        self.resultElement["systemName"] = model + " " + osVersion
+        self.resultElement["deviceWidth"] = deviceWidth
+        self.resultElement["deviceHeight"] = deviceHeight
+        self.resultElement["channelWidth"] = deviceWidth
+        self.resultElement["channelHeight"] = deviceHeight
+        self.resultElement["channelX"] = 0
+        self.resultElement["channelY"] = 0
     }
     
     func testExecuteCommand() {
