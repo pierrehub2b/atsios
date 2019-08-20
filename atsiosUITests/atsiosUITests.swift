@@ -74,6 +74,7 @@ class atsiosUITests: XCTestCase {
     var resultElement: [String: Any] = [:]
     var captureStruct: String = ""
     var flatStruct: [String: Frame] = [:]
+    var thread: Thread! = nil
     
     var continueExecution = true
     
@@ -94,8 +95,7 @@ class atsiosUITests: XCTestCase {
         
         XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
         
-        let thread = Thread(target: self, selector: Selector("udpStart"), object: nil)
-        thread.start()
+        self.thread = Thread(target: self, selector: Selector("udpStart"), object: nil)
         setupWebApp()
         setupApp()
         
@@ -332,6 +332,7 @@ class atsiosUITests: XCTestCase {
                                 XCUIDevice.shared.press(.home)
                                 self.resultElement["status"] = 0
                                 self.resultElement["screenCapturePort"] = 47633
+                                self.thread.start()
                                 self.driverInfoBase()
                             } else {
                                 if(actionsEnum.STOP.rawValue == parameters[0]) {
@@ -341,10 +342,10 @@ class atsiosUITests: XCTestCase {
                                         self.resultElement["message"] = "stop ats driver"
                                     }
                                     XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
-                                    //close all apps
                                 } else {
                                     if(actionsEnum.QUIT.rawValue == parameters[0]) {
                                         self.tearDown()
+                                        self.thread.cancel()
                                         self.resultElement["status"] = 0
                                         self.resultElement["message"] = "close ats driver"
                                     } else {
