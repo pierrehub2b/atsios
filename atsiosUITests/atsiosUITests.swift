@@ -15,7 +15,7 @@ import SwiftSocket
 struct UIElement: Codable {
     let id: String
     let tag: String
-    let clikable: Bool
+    let clickable: Bool
     let x: Double
     let y: Double
     let width: Double
@@ -62,6 +62,7 @@ class atsiosUITests: XCTestCase {
     var currentAppIdentifier: String = ""
     var allElements: UIElement? = nil
     var resultElement: [String: Any] = [:]
+    var captureStruct: String = ""
     
     var continueExecution = true
     
@@ -307,12 +308,11 @@ class atsiosUITests: XCTestCase {
                     }
                 }
             }
-            self.resultElement = [:]
+            self.resultElement = [:] 
             if(action == "") {
                 self.resultElement["status"] = -11
                 self.resultElement["message"] = "unknow command"
             } else {
-                self.resultElement["type"] = action
                 switch action {
                     case actionsEnum.DRIVER.rawValue:
                         if(parameters.count > 0) {
@@ -407,7 +407,7 @@ class atsiosUITests: XCTestCase {
                         let rootNode = UIElement(
                             id: levelUID,
                             tag: "root",
-                            clikable: false,
+                            clickable: false,
                             x: Double(self.cleanString(input: String(rootLine[2]))) as! Double,
                             y: Double(self.cleanString(input: String(rootLine[3]))) as! Double,
                             width: Double(self.cleanString(input: String(rootLine[4]))) as! Double,
@@ -418,7 +418,7 @@ class atsiosUITests: XCTestCase {
                             channelHeight: Double(self.cleanString(input: String(rootLine[5])))
                         )
 
-                        self.resultElement["data"] = self.convertIntoJSONString(arrayObject: rootNode)
+                        self.captureStruct = self.convertIntoJSONString(arrayObject: rootNode)
                         break
                     case actionsEnum.ELEMENT.rawValue:
                         if(parameters.count > 1) {
@@ -434,7 +434,7 @@ class atsiosUITests: XCTestCase {
                                 self.resultElement["status"] = -22
                                 self.resultElement["message"] = "element not in the screen"
                             }
-                            if(element != nil) {
+                            if(element != nil || parameters.count > 3) {
                                 if(actionsEnum.INPUT.rawValue == parameters[1]) {
                                     let text = parameters[2]
                                     if(element!.elementType.rawValue == 49 || element!.elementType.rawValue == 50) {
@@ -552,15 +552,19 @@ class atsiosUITests: XCTestCase {
                     }
             }
             
-            if let theJSONData = try?  JSONSerialization.data(
-                withJSONObject: self.resultElement,
-                options: []
-                ),
-                let theJSONText = String(data: theJSONData,
-                                         encoding: String.Encoding.utf8) {
-                sendBody(Data(theJSONText.utf8))
-                sendBody(Data())
+            if(action == actionsEnum.CAPTURE.rawValue) {
+                sendBody(Data(self.captureStruct.utf8))
+            } else {
+                if let theJSONData = try?  JSONSerialization.data(
+                    withJSONObject: self.resultElement,
+                    options: []
+                    ),
+                    let theJSONText = String(data: theJSONData,
+                                             encoding: String.Encoding.utf8) {
+                    sendBody(Data(theJSONText.utf8))
+                }
             }
+            sendBody(Data())
         }
         
         // Start HTTP server to listen on the port
@@ -622,7 +626,7 @@ class atsiosUITests: XCTestCase {
                 attr["description"] = placeHolder
                 attr["checkable"] = String(self.cleanString(input: String(splittedLine[0])) == "checkbox")
                 attr["enabled"] = "true"
-                attr["viewId"] = identifier
+                attr["identifier"] = identifier
                 attr["selected"] = "false"
                 attr["editable"] = "true"
                 attr["numeric"] = "false"
@@ -630,7 +634,7 @@ class atsiosUITests: XCTestCase {
                 tableToReturn.append(UIElement(
                     id: levelUID,
                     tag: self.cleanString(input: String(splittedLine[0])),
-                    clikable: true,
+                    clickable: true,
                     x: Double(self.cleanString(input: String(splittedLine[2]))) as! Double,
                     y: Double(self.cleanString(input: String(splittedLine[3]))) as! Double,
                     width: Double(self.cleanString(input: String(splittedLine[4]))) as! Double,
