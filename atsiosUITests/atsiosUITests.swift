@@ -10,7 +10,6 @@ import UIKit
 import XCTest
 import Embassy
 import EnvoyAmbassador
-import SwiftSocket
 
 struct UIElement: Codable {
     let id: String
@@ -68,7 +67,8 @@ class atsiosUITests: XCTestCase {
     
     var port = 8080
     var app: XCUIApplication!
-    var udpClient: UDPClient!
+    var portUdp: Int = 47633
+    var udpServer: UDPServer!
     var currentAppIdentifier: String = ""
     var allElements: UIElement? = nil
     var resultElement: [String: Any] = [:]
@@ -94,10 +94,20 @@ class atsiosUITests: XCTestCase {
         
         XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
         
+        let thread = Thread(target: self, selector: Selector("udpStart"), object: nil)
+        thread.start()
         setupWebApp()
         setupApp()
         
-        //self.udpClient = UDPClient(address: "www.apple.com", port: 80)
+
+    }
+    
+    func udpStart(){
+        self.udpServer = UDPServer(port: self.portUdp)
+        print("Swift Echo Server Sample")
+        print("Connect with a command line window by entering 'telnet ::1 \(portUdp)'")
+        
+        self.udpServer.run()
     }
     
     func getEnumStringValue(rawValue: UInt) -> String {
@@ -271,16 +281,6 @@ class atsiosUITests: XCTestCase {
         default:
             return "any"
         }
-    }
-    
-    func setupUdpClient() {
-        //udpThread = Thread(target: self, selector: #selector(runUdpServer), object: nil)
-        //udpThread.start()
-    }
-    
-    @objc private func runUdpServer() {
-        // Create a socket connect to www.apple.com and port at 80
-        udpClient = UDPClient(address: "www.apple.com", port: 80)
     }
     
     // setup the Embassy web server for testing

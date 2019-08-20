@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		043FEF82230C1DFD007051EF /* libBlueSocket.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 043FEF81230C1DFD007051EF /* libBlueSocket.a */; };
+		043FEF84230C2960007051EF /* UdpServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 043FEF83230C2960007051EF /* UdpServer.swift */; };
 		047BFA6822F178D700BB2E25 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 047BFA6722F178D700BB2E25 /* AppDelegate.swift */; };
 		047BFA6A22F178D700BB2E25 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 047BFA6922F178D700BB2E25 /* ViewController.swift */; };
 		047BFA6D22F178D700BB2E25 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 047BFA6B22F178D700BB2E25 /* Main.storyboard */; };
@@ -14,7 +16,6 @@
 		047BFA7222F178D800BB2E25 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 047BFA7122F178D800BB2E25 /* Assets.xcassets */; };
 		047BFA7522F178D800BB2E25 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 047BFA7322F178D800BB2E25 /* LaunchScreen.storyboard */; };
 		047BFA8022F178D800BB2E25 /* atsiosUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 047BFA7F22F178D800BB2E25 /* atsiosUITests.swift */; };
-		04DEC05F22FB21FF00941684 /* libSwiftSocket.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 04DEC05E22FB21FF00941684 /* libSwiftSocket.a */; };
 		04FB981022F17BC500D2B564 /* libEmbassy.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 04FB980F22F17BC500D2B564 /* libEmbassy.a */; };
 		04FB981222F17BC500D2B564 /* libEnvoyAmbassador.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 04FB981122F17BC500D2B564 /* libEnvoyAmbassador.a */; };
 		B838CAF2ACFF0346AFC747BC /* libPods-atsiosUITests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C0D8CE06F7ACBB16A5BDF271 /* libPods-atsiosUITests.a */; };
@@ -31,6 +32,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		043FEF81230C1DFD007051EF /* libBlueSocket.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libBlueSocket.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		043FEF83230C2960007051EF /* UdpServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UdpServer.swift; sourceTree = "<group>"; };
 		046FFFB122F9BDF8008C6466 /* libUITestHelpers.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libUITestHelpers.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		047BFA6422F178D700BB2E25 /* atsios.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = atsios.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		047BFA6722F178D700BB2E25 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -64,7 +67,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				04DEC05F22FB21FF00941684 /* libSwiftSocket.a in Frameworks */,
+				043FEF82230C1DFD007051EF /* libBlueSocket.a in Frameworks */,
 				04FB981022F17BC500D2B564 /* libEmbassy.a in Frameworks */,
 				04FB981222F17BC500D2B564 /* libEnvoyAmbassador.a in Frameworks */,
 				B838CAF2ACFF0346AFC747BC /* libPods-atsiosUITests.a in Frameworks */,
@@ -113,6 +116,7 @@
 			children = (
 				047BFA7F22F178D800BB2E25 /* atsiosUITests.swift */,
 				047BFA8122F178D800BB2E25 /* Info.plist */,
+				043FEF83230C2960007051EF /* UdpServer.swift */,
 			);
 			path = atsiosUITests;
 			sourceTree = "<group>";
@@ -129,6 +133,7 @@
 		CE6333FFDB6E768160A7BE15 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				043FEF81230C1DFD007051EF /* libBlueSocket.a */,
 				04DEC05E22FB21FF00941684 /* libSwiftSocket.a */,
 				046FFFB122F9BDF8008C6466 /* libUITestHelpers.a */,
 				049922E322F2F30500A53078 /* libSwiftyJSON.a */,
@@ -276,6 +281,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				043FEF84230C2960007051EF /* UdpServer.swift in Sources */,
 				047BFA8022F178D800BB2E25 /* atsiosUITests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
