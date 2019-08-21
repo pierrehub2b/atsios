@@ -15,7 +15,7 @@
 		047BFA7022F178D700BB2E25 /* atsios.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 047BFA6E22F178D700BB2E25 /* atsios.xcdatamodeld */; };
 		047BFA7222F178D800BB2E25 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 047BFA7122F178D800BB2E25 /* Assets.xcassets */; };
 		047BFA7522F178D800BB2E25 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 047BFA7322F178D800BB2E25 /* LaunchScreen.storyboard */; };
-		047BFA8022F178D800BB2E25 /* atsiosUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 047BFA7F22F178D800BB2E25 /* atsiosUITests.swift */; };
+		047BFA8022F178D800BB2E25 /* atsDriver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 047BFA7F22F178D800BB2E25 /* atsDriver.swift */; };
 		04FB981022F17BC500D2B564 /* libEmbassy.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 04FB980F22F17BC500D2B564 /* libEmbassy.a */; };
 		04FB981222F17BC500D2B564 /* libEnvoyAmbassador.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 04FB981122F17BC500D2B564 /* libEnvoyAmbassador.a */; };
 		B838CAF2ACFF0346AFC747BC /* libPods-atsiosUITests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C0D8CE06F7ACBB16A5BDF271 /* libPods-atsiosUITests.a */; };
@@ -43,8 +43,8 @@
 		047BFA7122F178D800BB2E25 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		047BFA7422F178D800BB2E25 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		047BFA7622F178D800BB2E25 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		047BFA7B22F178D800BB2E25 /* atsiosUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = atsiosUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		047BFA7F22F178D800BB2E25 /* atsiosUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = atsiosUITests.swift; sourceTree = "<group>"; };
+		047BFA7B22F178D800BB2E25 /* atsDriver.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = atsDriver.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		047BFA7F22F178D800BB2E25 /* atsDriver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = atsDriver.swift; sourceTree = "<group>"; };
 		047BFA8122F178D800BB2E25 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		049922E322F2F30500A53078 /* libSwiftyJSON.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libSwiftyJSON.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		04DEC05E22FB21FF00941684 /* libSwiftSocket.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libSwiftSocket.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -81,7 +81,7 @@
 			isa = PBXGroup;
 			children = (
 				047BFA6622F178D700BB2E25 /* atsios */,
-				047BFA7E22F178D800BB2E25 /* atsiosUITests */,
+				047BFA7E22F178D800BB2E25 /* atsDriver */,
 				047BFA6522F178D700BB2E25 /* Products */,
 				8104A8FE9B89D14A79A1BCE4 /* Pods */,
 				CE6333FFDB6E768160A7BE15 /* Frameworks */,
@@ -92,7 +92,7 @@
 			isa = PBXGroup;
 			children = (
 				047BFA6422F178D700BB2E25 /* atsios.app */,
-				047BFA7B22F178D800BB2E25 /* atsiosUITests.xctest */,
+				047BFA7B22F178D800BB2E25 /* atsDriver.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -111,14 +111,14 @@
 			path = atsios;
 			sourceTree = "<group>";
 		};
-		047BFA7E22F178D800BB2E25 /* atsiosUITests */ = {
+		047BFA7E22F178D800BB2E25 /* atsDriver */ = {
 			isa = PBXGroup;
 			children = (
-				047BFA7F22F178D800BB2E25 /* atsiosUITests.swift */,
+				047BFA7F22F178D800BB2E25 /* atsDriver.swift */,
 				047BFA8122F178D800BB2E25 /* Info.plist */,
 				043FEF83230C2960007051EF /* UdpServer.swift */,
 			);
-			path = atsiosUITests;
+			path = atsDriver;
 			sourceTree = "<group>";
 		};
 		8104A8FE9B89D14A79A1BCE4 /* Pods */ = {
@@ -164,9 +164,9 @@
 			productReference = 047BFA6422F178D700BB2E25 /* atsios.app */;
 			productType = "com.apple.product-type.application";
 		};
-		047BFA7A22F178D800BB2E25 /* atsiosUITests */ = {
+		047BFA7A22F178D800BB2E25 /* atsDriver */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 047BFA8722F178D800BB2E25 /* Build configuration list for PBXNativeTarget "atsiosUITests" */;
+			buildConfigurationList = 047BFA8722F178D800BB2E25 /* Build configuration list for PBXNativeTarget "atsDriver" */;
 			buildPhases = (
 				DD4A9195FF4E34E1E7D1C6B8 /* [CP] Check Pods Manifest.lock */,
 				047BFA7722F178D800BB2E25 /* Sources */,
@@ -178,9 +178,9 @@
 			dependencies = (
 				047BFA7D22F178D800BB2E25 /* PBXTargetDependency */,
 			);
-			name = atsiosUITests;
+			name = atsDriver;
 			productName = agilitest_iosDriverUITests;
-			productReference = 047BFA7B22F178D800BB2E25 /* atsiosUITests.xctest */;
+			productReference = 047BFA7B22F178D800BB2E25 /* atsDriver.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -216,7 +216,7 @@
 			projectRoot = "";
 			targets = (
 				047BFA6322F178D700BB2E25 /* atsios */,
-				047BFA7A22F178D800BB2E25 /* atsiosUITests */,
+				047BFA7A22F178D800BB2E25 /* atsDriver */,
 			);
 		};
 /* End PBXProject section */
@@ -282,7 +282,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				043FEF84230C2960007051EF /* UdpServer.swift in Sources */,
-				047BFA8022F178D800BB2E25 /* atsiosUITests.swift in Sources */,
+				047BFA8022F178D800BB2E25 /* atsDriver.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -443,8 +443,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CODE_SIGN_STYLE = Manual;
-				DEVELOPMENT_TEAM = X58W5PF95D;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = Q33AB6YYGF;
 				INFOPLIST_FILE = atsios/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -452,7 +452,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.ats.ios;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = testing3;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -463,8 +463,8 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CODE_SIGN_STYLE = Manual;
-				DEVELOPMENT_TEAM = X58W5PF95D;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = Q33AB6YYGF;
 				INFOPLIST_FILE = atsios/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -472,7 +472,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.ats.ios;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE_SPECIFIER = testing3;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -486,7 +486,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				CUSTOM_PORT = 8080;
-				DEVELOPMENT_TEAM = X58W5PF95D;
+				DEVELOPMENT_TEAM = Q33AB6YYGF;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"CUSTOM_PORT=$(CUSTOM_PORT)",
 					"$(inherited)",
@@ -515,7 +515,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				CUSTOM_PORT = 8080;
-				DEVELOPMENT_TEAM = X58W5PF95D;
+				DEVELOPMENT_TEAM = Q33AB6YYGF;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"CUSTOM_PORT=$(CUSTOM_PORT)",
 					"$(inherited)",
@@ -557,7 +557,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		047BFA8722F178D800BB2E25 /* Build configuration list for PBXNativeTarget "atsiosUITests" */ = {
+		047BFA8722F178D800BB2E25 /* Build configuration list for PBXNativeTarget "atsDriver" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				047BFA8822F178D800BB2E25 /* Debug */,

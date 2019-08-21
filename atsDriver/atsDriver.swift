@@ -1,8 +1,8 @@
 //
-//  atsiosUITests.swift
-//  atsiosUITests
+//  atsDriver.swift
+//  atsDriver
 //
-//  Copyright © 2019 ATSIOS. All rights reserved.
+//  Copyright © 2019 atsDriver. All rights reserved.
 //
 
 import Foundation
@@ -63,7 +63,7 @@ struct Frame {
     let height: Double
 }
 
-class atsiosUITests: XCTestCase {
+class atsDriver: XCTestCase {
     
     var port = 8080
     var app: XCUIApplication!
@@ -357,6 +357,9 @@ class atsiosUITests: XCTestCase {
                                         self.thread.cancel()
                                         self.resultElement["status"] = 0
                                         self.resultElement["message"] = "close ats driver"
+                                    } else if(actionsEnum.INFO.rawValue == parameters[0]) {
+                                        self.resultElement["status"] = 0
+                                        self.resultElement["message"] = "get info"
                                     } else {
                                         self.resultElement["message"] = "missiing driver action type " + parameters[0]
                                         self.resultElement["status"] = -42
@@ -595,7 +598,7 @@ class atsiosUITests: XCTestCase {
         try! server.start()
         
         let endPoint = getWiFiAddress()! + ":" + String(self.port)
-        fputs("ATSIOS_DRIVER_HOST=" + endPoint + "\n", stderr)
+        fputs("ATSDRIVER_DRIVER_HOST=" + endPoint + "\n", stderr)
         
         // Run event loop
         loop.runForever()
@@ -614,12 +617,56 @@ class atsiosUITests: XCTestCase {
         }
     }
     
+    func split(input: String, regex: String) -> [String] {
+        
+        guard let re = try? NSRegularExpression(pattern: regex, options: [])
+            else { return [] }
+        
+        let nsString = input as NSString // needed for range compatibility
+        let stop = "<SomeStringThatYouDoNotExpectToOccurInSelf>"
+        let modifiedString = re.stringByReplacingMatches(
+            in: input,
+            options: [],
+            range: NSRange(location: 0, length: nsString.length),
+            withTemplate: "")
+        return modifiedString.components(separatedBy: stop)
+    }
+    
     func getChildrens(currentLevel: Int, currentIndex: Int, endedIndex: Int, leveledTable: [(Int,String)]) -> [UIElement] {
         var tableToReturn: [UIElement] = [UIElement]()
         for line in currentIndex...leveledTable.count-1 {
             let levelUID = UUID().uuidString
             let currentLine = leveledTable[line]
-            let splittedLine = currentLine.1.split(separator: ",")
+            var splittedLine: [String] = [String]()
+            
+            var currentString = ""
+            var stopSplitting = false
+            var index = 0
+            var isValue = false
+            for char in currentLine.1 {
+                if(isValue) {
+                    currentString += String(char)
+                    if((index + 1) == currentLine.1.count) {
+                        splittedLine.append(currentString)
+                    }
+                } else if(currentString.contains("value")) {
+                    isValue = !isValue
+                    currentString += String(char)
+                } else if(char == "," && !stopSplitting){
+                    splittedLine.append(currentString)
+                    currentString = ""
+                } else {
+                    if(char == "'") {
+                        stopSplitting = !stopSplitting
+                    }
+                    currentString += String(char)
+                    if((index + 1) == currentLine.1.count) {
+                        splittedLine.append(currentString)
+                    }
+                }
+                index += 1
+            }
+            
             if(currentLine.0 == currentLevel && endedIndex >= line) {
                 var endIn = line + 1
                 for el in endIn...leveledTable.count-1 {
@@ -635,6 +682,7 @@ class atsiosUITests: XCTestCase {
                 var label = ""
                 var placeHolder = ""
                 var identifier = ""
+                var value = ""
                 let pattern = "'(.*?)'"
                 for str in splittedLine {
                     if(str.contains("identifier")) {
@@ -646,17 +694,35 @@ class atsiosUITests: XCTestCase {
                     if(str.contains("placeholderValue")) {
                         placeHolder = (self.matchingStrings(input: String(str), regex: pattern).first?[1])!
                     }
+                    if(str.contains("value")) {
+                        var valueTable = str.split(separator: ":")
+                        if(valueTable.count == 2) {
+                            let val = valueTable[1]
+                            value = val.trimmingCharacters(in: .whitespacesAndNewlines)
+                        }
+                    }
+                }
+                
+                var enabled = true
+                if(currentLine.1.contains("Disabled")) {
+                    enabled = false
+                }
+                
+                var selected = false
+                if(currentLine.1.contains("Selected")) {
+                    selected = true
                 }
                 
                 
                 attr["text"] = label
                 attr["description"] = placeHolder
                 attr["checkable"] = String(self.cleanString(input: String(splittedLine[0])) == "checkbox")
-                attr["enabled"] = "true"
+                attr["enabled"] = String(enabled)
                 attr["identifier"] = identifier
-                attr["selected"] = "false"
-                attr["editable"] = "true"
+                attr["selected"] = String(selected)
+                attr["editable"] = String(enabled)
                 attr["numeric"] = "false"
+                attr["value"] = value
                 
                 let x = Double(self.cleanString(input: String(splittedLine[2]))) as! Double
                 let y = Double(self.cleanString(input: String(splittedLine[3]))) as! Double
