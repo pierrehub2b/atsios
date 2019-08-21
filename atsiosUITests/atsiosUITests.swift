@@ -101,7 +101,7 @@ class atsiosUITests: XCTestCase {
         
         XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
         
-        self.thread = Thread(target: self, selector: Selector("udpStart"), object: nil)
+        self.thread = Thread(target: self, selector: Selector(("udpStart")), object: nil)
         setupWebApp()
         setupApp()
         
