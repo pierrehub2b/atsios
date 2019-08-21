@@ -139,8 +139,10 @@ class UDPServer {
                         print("Server received from connection at \(socket.remoteHostname):\(socket.remotePort): \(response) ")
                         let screenShotImage = XCUIScreen.main.screenshot().image
                         let data = UIImagePNGRepresentation(screenShotImage) as NSData?
-                        var bytes = [UInt8](data!)
+                        let bytes = [UInt8](data!)
                         let reply = bytes
+                        try socket.write(from: reply, bufSize: bytes.count)
+                        
                         
                         if (response.uppercased().hasPrefix(UDPServer.quitCommand) || response.uppercased().hasPrefix(UDPServer.shutdownCommand)) &&
                             (!response.hasPrefix(UDPServer.quitCommand) && !response.hasPrefix(UDPServer.shutdownCommand)) {
