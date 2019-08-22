@@ -160,7 +160,7 @@ class atsDriver: XCTestCase {
                     
                     repeat {
                         // get the length of the chunk
-                        let thisChunkSize = ((data.count - offset) > bufferSize) ? bufferSize : (data.count - offset);
+                        let thisChunkSize = (((data.count-1) - offset) > bufferSize) ? bufferSize : ((data.count-1) - offset);
                         
                         // get the chunk
                         let chunk = data.subdata(in: offset..<offset + thisChunkSize)
@@ -170,7 +170,7 @@ class atsDriver: XCTestCase {
                         // update the offset
                         offset += thisChunkSize;
                         
-                    } while (offset < data.count);
+                    } while (offset < (data.count-1));
                     
                 } catch let error {
                     
