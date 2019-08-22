@@ -355,7 +355,7 @@ class atsDriver: XCTestCase {
                                 self.driverInfoBase()
                                 self.resultElement["status"] = 0
                                 self.resultElement["screenCapturePort"] = self.portUdp
-                                self.thread.start()
+                                //self.thread.start()
                                 
                             } else {
                                 if(actionsEnum.STOP.rawValue == parameters[0]) {
