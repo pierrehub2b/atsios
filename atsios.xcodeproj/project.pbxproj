@@ -14,8 +14,7 @@
 		047BFA7222F178D800BB2E25 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 047BFA7122F178D800BB2E25 /* Assets.xcassets */; };
 		047BFA7522F178D800BB2E25 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 047BFA7322F178D800BB2E25 /* LaunchScreen.storyboard */; };
 		047BFA8022F178D800BB2E25 /* atsDriver.swift in Sources */ = {isa = PBXBuildFile; fileRef = 047BFA7F22F178D800BB2E25 /* atsDriver.swift */; };
-		048E4D3D230E7E3C0004B08E /* libSocket.IO-Client-Swift.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 048E4D3C230E7E3C0004B08E /* libSocket.IO-Client-Swift.a */; };
-		048E4D3F230E7E3C0004B08E /* libStarscream.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 048E4D3E230E7E3C0004B08E /* libStarscream.a */; };
+		048E4D4B230E9D850004B08E /* libBlueSocket.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 048E4D4A230E9D850004B08E /* libBlueSocket.a */; };
 		04FB981022F17BC500D2B564 /* libEmbassy.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 04FB980F22F17BC500D2B564 /* libEmbassy.a */; };
 		04FB981222F17BC500D2B564 /* libEnvoyAmbassador.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 04FB981122F17BC500D2B564 /* libEnvoyAmbassador.a */; };
 		4642DFB0BA296DCD9288BF84 /* libPods-atsDriver.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 672037982A627CDF33E32082 /* libPods-atsDriver.a */; };
@@ -47,6 +46,10 @@
 		047BFA8122F178D800BB2E25 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		048E4D3C230E7E3C0004B08E /* libSocket.IO-Client-Swift.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libSocket.IO-Client-Swift.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		048E4D3E230E7E3C0004B08E /* libStarscream.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libStarscream.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		048E4D40230E8D7A0004B08E /* libSocket.swift.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libSocket.swift.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		048E4D42230E90230004B08E /* libSocket.IO-Client-Swift.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = "libSocket.IO-Client-Swift.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		048E4D44230E90230004B08E /* libStarscream.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libStarscream.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		048E4D4A230E9D850004B08E /* libBlueSocket.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libBlueSocket.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		049922E322F2F30500A53078 /* libSwiftyJSON.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libSwiftyJSON.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		04DEC05E22FB21FF00941684 /* libSwiftSocket.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libSwiftSocket.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		04FB980F22F17BC500D2B564 /* libEmbassy.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libEmbassy.a; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -70,8 +73,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				048E4D3D230E7E3C0004B08E /* libSocket.IO-Client-Swift.a in Frameworks */,
-				048E4D3F230E7E3C0004B08E /* libStarscream.a in Frameworks */,
+				048E4D4B230E9D850004B08E /* libBlueSocket.a in Frameworks */,
 				04FB981022F17BC500D2B564 /* libEmbassy.a in Frameworks */,
 				04FB981222F17BC500D2B564 /* libEnvoyAmbassador.a in Frameworks */,
 				4642DFB0BA296DCD9288BF84 /* libPods-atsDriver.a in Frameworks */,
@@ -138,6 +140,10 @@
 		CE6333FFDB6E768160A7BE15 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				048E4D4A230E9D850004B08E /* libBlueSocket.a */,
+				048E4D42230E90230004B08E /* libSocket.IO-Client-Swift.a */,
+				048E4D44230E90230004B08E /* libStarscream.a */,
+				048E4D40230E8D7A0004B08E /* libSocket.swift.a */,
 				048E4D3C230E7E3C0004B08E /* libSocket.IO-Client-Swift.a */,
 				048E4D3E230E7E3C0004B08E /* libStarscream.a */,
 				043FEF81230C1DFD007051EF /* libBlueSocket.a */,

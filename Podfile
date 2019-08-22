@@ -6,5 +6,5 @@ target 'atsDriver' do
   # Pods for testing
   pod 'Embassy'
   pod 'EnvoyAmbassador'
-  pod 'Socket.IO-Client-Swift'
+  pod 'BlueSocket'
 end

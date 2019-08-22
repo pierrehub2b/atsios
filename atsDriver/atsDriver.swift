@@ -20,6 +20,7 @@ import UIKit
 import XCTest
 import Embassy
 import EnvoyAmbassador
+import Socket
 
 struct UIElement: Codable {
     let id: String
@@ -77,8 +78,6 @@ class atsDriver: XCTestCase {
     
     var port = 8080
     var app: XCUIApplication!
-    var portUdp: Int = 47633
-    //var udpServer: UDPServer!
     var currentAppIdentifier: String = ""
     var allElements: UIElement? = nil
     var resultElement: [String: Any] = [:]
@@ -86,7 +85,12 @@ class atsDriver: XCTestCase {
     var flatStruct: [String: Frame] = [:]
     var thread: Thread! = nil
     
-    //var listenSocket: Socket!
+    var udpPort: Int = 47633
+    var listenSocket: Socket? = nil
+    var continueRunningValue = true
+    var connectedSockets = [Int32: Socket]()
+    let socketLockQueue = DispatchQueue(label: "com.ibm.serverSwift.socketLockQueue")
+    
     let osVersion = UIDevice.current.systemVersion
     let model = UIDevice.current.name
     let uid = UIDevice.current.identifierForVendor!.uuidString
@@ -112,8 +116,8 @@ class atsDriver: XCTestCase {
         
         XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
         
-        //self.thread = Thread(target: self, selector: Selector(("udpStart")), object: nil)
-        
+        self.thread = Thread(target: self, selector: Selector(("udpStart")), object: nil)
+        self.thread.start()
         setupWebApp()
         setupApp()
         
@@ -124,10 +128,86 @@ class atsDriver: XCTestCase {
         for i in 8080..<65000 {
             let (isFree, _) = checkTcpPortForListen(port: UInt16(i))
             if isFree == true {
-                self.portUdp = i
+                self.udpPort = i
                 break;
             }
         }
+        
+        let queue: DispatchQueue? = DispatchQueue.global(qos: .userInteractive)
+        guard let pQueue = queue else {
+            print("Unable to access global interactive QOS queue")
+            return
+        }
+
+        do {
+            // Create the socket..
+            let socket: Socket = try Socket.create(family: .inet, type: .datagram, proto: .udp)
+            
+            pQueue.async { [unowned self, socket] in
+                do {
+                    // Listen on the port...
+                    var data = Data()
+                    print("listening ... ")
+                    var currentConnection = try socket.listen(forMessage: &data, on: self.udpPort)
+                    
+                    print("Accepted connection from: \(socket.remotePath ?? socket.remoteHostname) on port \(socket.remotePort), Secure? \(socket.signature!.isSecure)")
+                    let screenShotImage = XCUIScreen.main.screenshot().image
+                    let dataImg = UIImagePNGRepresentation(screenShotImage) as! NSData
+                    let bytes = [UInt8](dataImg as NSData)
+                    data.append(contentsOf: bytes)
+                    try socket.connect(using: socket.signature!)
+                    let bufferSize = 2000
+                    var offset = 0
+                    
+                    repeat {
+                        // get the length of the chunk
+                        let thisChunkSize = ((data.count - offset) > bufferSize) ? bufferSize : (data.count - offset);
+                        
+                        // get the chunk
+                        let chunk = data.subdata(in: offset..<offset + thisChunkSize)
+                        
+                        try socket.write(from: chunk)
+                        
+                        // update the offset
+                        offset += thisChunkSize;
+                        
+                    } while (offset < data.count);
+                    
+                } catch let error {
+                    
+                    // See if it's a socket error or something else...
+                    guard let socketError = error as? Socket.Error else {
+                        socket.close()
+                        print("socket close")
+                        print("Unexpected error...")
+                        return
+                    }
+                    if socketError.errorCode != Int32(Socket.SOCKET_ERR_RECV_FAILED) {
+                        socket.close()
+                        print("socket close")
+                        print("testListenUDP Error reported 1: \(socketError.description)")
+                    }
+                }
+            }
+            
+            
+        } catch let error {
+            // See if it's a socket error or something else...
+            guard let socketError = error as? Socket.Error else {
+                print("Unexpected error...")
+                return
+            }
+            print("testListenUDP Error reported: \(socketError.description)")
+            
+        }
+    }
+    
+    func sizeof<T:FixedWidthInteger>(_ int:T) -> Int {
+        return int.bitWidth/UInt8.bitWidth
+    }
+    
+    func sizeof<T:FixedWidthInteger>(_ intType:T.Type) -> Int {
+        return intType.bitWidth/UInt8.bitWidth
     }
     
     func getEnumStringValue(rawValue: UInt) -> String {
@@ -310,7 +390,7 @@ class atsDriver: XCTestCase {
         
         for i in 8080..<65000 {
             let (isFree, _) = checkTcpPortForListen(port: UInt16(i))
-            if isFree == true {
+            if (isFree == true && i != self.udpPort) {
                 self.port = i
                 break;
             }
@@ -350,24 +430,22 @@ class atsDriver: XCTestCase {
                         if(parameters.count > 0) {
                             if(actionsEnum.START.rawValue == parameters[0]) {
                                 XCUIDevice.shared.press(.home)
-                                
                                 self.driverInfoBase()
                                 self.resultElement["status"] = 0
-                                self.resultElement["screenCapturePort"] = self.portUdp
+                                self.resultElement["screenCapturePort"] = self.udpPort
                                 //self.thread.start()
                                 
                             } else {
                                 if(actionsEnum.STOP.rawValue == parameters[0]) {
                                     if(self.app != nil){
                                         self.app.terminate()
-                                        XCUIDevice.shared.press(.home)
+                                        XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
                                         self.resultElement["status"] = 0
                                         self.resultElement["message"] = "stop ats driver"
                                     }
                                 } else {
                                     if(actionsEnum.QUIT.rawValue == parameters[0]) {
                                         //self.tearDown()
-                                        //self.thread.cancel()
                                         self.app.terminate()
                                         XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
                                         self.resultElement["status"] = 0
