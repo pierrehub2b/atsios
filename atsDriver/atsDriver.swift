@@ -565,7 +565,6 @@ class atsDriver: XCTestCase {
                         self.driverInfoBase()
                         self.resultElement["message"] = "device capabilities"
                         self.resultElement["status"] = 0
-                        self.resultElement["system"] = "ios"
                         self.resultElement["id"] = self.uid
                         self.resultElement["model"] = self.model
                         self.resultElement["manufacturer"] = "Apple"
