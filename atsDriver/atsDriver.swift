@@ -1,9 +1,19 @@
+//Licensed to the Apache Software Foundation (ASF) under one
+//or more contributor license agreements.  See the NOTICE file
+//distributed with this work for additional information
+//    regarding copyright ownership.  The ASF licenses this file
+//to you under the Apache License, Version 2.0 (the
+//"License"); you may not use this file except in compliance
+//with the License.  You may obtain a copy of the License at
 //
-//  atsDriver.swift
-//  atsDriver
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
-//  Copyright © 2019 atsDriver. All rights reserved.
-//
+//Unless required by applicable law or agreed to in writing,
+//software distributed under the License is distributed on an
+//"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+//KIND, either express or implied.  See the License for the
+//specific language governing permissions and limitations
+//under the License.
 
 import Foundation
 import UIKit
@@ -68,7 +78,7 @@ class atsDriver: XCTestCase {
     var port = 8080
     var app: XCUIApplication!
     var portUdp: Int = 47633
-    var udpServer: UDPServer!
+    //var udpServer: UDPServer!
     var currentAppIdentifier: String = ""
     var allElements: UIElement? = nil
     var resultElement: [String: Any] = [:]
@@ -76,6 +86,7 @@ class atsDriver: XCTestCase {
     var flatStruct: [String: Frame] = [:]
     var thread: Thread! = nil
     
+    //var listenSocket: Socket!
     let osVersion = UIDevice.current.systemVersion
     let model = UIDevice.current.name
     let uid = UIDevice.current.identifierForVendor!.uuidString
@@ -101,7 +112,8 @@ class atsDriver: XCTestCase {
         
         XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
         
-        self.thread = Thread(target: self, selector: Selector(("udpStart")), object: nil)
+        //self.thread = Thread(target: self, selector: Selector(("udpStart")), object: nil)
+        
         setupWebApp()
         setupApp()
         
@@ -109,11 +121,13 @@ class atsDriver: XCTestCase {
     }
     
     func udpStart(){
-        self.udpServer = UDPServer(port: self.portUdp)
-        print("Swift Echo Server Sample")
-        print("Connect with a command line window by entering 'telnet ::1 \(portUdp)'")
-        
-        self.udpServer.run()
+        for i in 8080..<65000 {
+            let (isFree, _) = checkTcpPortForListen(port: UInt16(i))
+            if isFree == true {
+                self.portUdp = i
+                break;
+            }
+        }
     }
     
     func getEnumStringValue(rawValue: UInt) -> String {
@@ -340,7 +354,7 @@ class atsDriver: XCTestCase {
                                 
                                 self.driverInfoBase()
                                 self.resultElement["status"] = 0
-                                self.resultElement["screenCapturePort"] = 47633
+                                self.resultElement["screenCapturePort"] = self.portUdp
                                 self.thread.start()
                                 
                             } else {
