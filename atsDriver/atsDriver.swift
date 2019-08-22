@@ -155,7 +155,6 @@ class atsDriver: XCTestCase {
                     let dataImg = UIImagePNGRepresentation(screenShotImage) as! NSData
                     let bytes = [UInt8](dataImg as NSData)
                     data.append(contentsOf: bytes)
-                    try socket.connect(using: socket.signature!)
                     let bufferSize = 2000
                     var offset = 0
                     
@@ -166,7 +165,7 @@ class atsDriver: XCTestCase {
                         // get the chunk
                         let chunk = data.subdata(in: offset..<offset + thisChunkSize)
                         
-                        try socket.write(from: chunk)
+                        try socket.write(from: chunk, to: currentConnection.address!)
                         
                         // update the offset
                         offset += thisChunkSize;
