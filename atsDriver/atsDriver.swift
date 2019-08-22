@@ -349,7 +349,6 @@ class atsDriver: XCTestCase {
                     case actionsEnum.DRIVER.rawValue:
                         if(parameters.count > 0) {
                             if(actionsEnum.START.rawValue == parameters[0]) {
-                                XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
                                 XCUIDevice.shared.press(.home)
                                 
                                 self.driverInfoBase()
@@ -361,14 +360,16 @@ class atsDriver: XCTestCase {
                                 if(actionsEnum.STOP.rawValue == parameters[0]) {
                                     if(self.app != nil){
                                         self.app.terminate()
+                                        XCUIDevice.shared.press(.home)
                                         self.resultElement["status"] = 0
                                         self.resultElement["message"] = "stop ats driver"
                                     }
-                                    XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
                                 } else {
                                     if(actionsEnum.QUIT.rawValue == parameters[0]) {
-                                        self.tearDown()
-                                        self.thread.cancel()
+                                        //self.tearDown()
+                                        //self.thread.cancel()
+                                        self.app.terminate()
+                                        XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
                                         self.resultElement["status"] = 0
                                         self.resultElement["message"] = "close ats driver"
                                     } else if(actionsEnum.INFO.rawValue == parameters[0]) {
