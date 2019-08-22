@@ -125,7 +125,7 @@ class atsDriver: XCTestCase {
     }
     
     func udpStart(){
-        for i in 8080..<65000 {
+        for i in 60000..<65000 {
             let (isFree, _) = checkTcpPortForListen(port: UInt16(i))
             if isFree == true {
                 self.udpPort = i
@@ -150,39 +150,61 @@ class atsDriver: XCTestCase {
                     print("listening ... ")
                     var currentConnection = try socket.listen(forMessage: &data, on: self.udpPort)
                     
-                    print("Accepted connection from: \(socket.remotePath ?? socket.remoteHostname) on port \(socket.remotePort), Secure? \(socket.signature!.isSecure)")
-                    let screenShotImage = XCUIScreen.main.screenshot().image
-                    let dataImg = UIImagePNGRepresentation(screenShotImage) as! NSData
-                    let bytes = [UInt8](dataImg as NSData)
-                    data.append(contentsOf: bytes)
-                    let bufferSize = 2000
-                    var offset = 0
-                    
-                    repeat {
-                        // get the length of the chunk
-                        let thisChunkSize = (((data.count-1) - offset) > bufferSize) ? bufferSize : ((data.count-1) - offset);
+                    while self.continueExecution {
+                        print("Accepted connection from: \(socket.remotePath ?? socket.remoteHostname) on port \(socket.remotePort), Secure? \(socket.signature!.isSecure)")
+                        let screenShotImage = XCUIScreen.main.screenshot().image
+                        let dataImg = UIImagePNGRepresentation(screenShotImage) as! NSData
+                        let bytes = [UInt8](dataImg as NSData)
+                        data.append(contentsOf: bytes)
+                        let bufferSize = 1998
+                        var offset = 0
+                        var index: UInt8 = 0
                         
-                        // get the chunk
-                        let chunk = data.subdata(in: offset..<offset + thisChunkSize)
-                        
-                        try socket.write(from: chunk, to: currentConnection.address!)
-                        
-                        // update the offset
-                        offset += thisChunkSize;
-                        
-                    } while (offset < (data.count-1));
+                        repeat {
+                            // get the length of the chunk
+                            let thisChunkSize = ((data.count - offset) > bufferSize) ? bufferSize : (data.count - offset);
+                            
+                            // get the chunk
+                            var chunk = data.subdata(in: offset..<offset + thisChunkSize)
+                            
+                            let uint32Offset = UInt32(offset)
+                            let byte1 = UInt8(uint32Offset & 0x000000FF)         // 10
+                            let byte2 = UInt8((uint32Offset & 0x0000FF00) >> 8)  // 154
+                            let byte3 = UInt8((uint32Offset & 0x00FF0000) >> 16) // 0
+                            let byte4 = UInt8((uint32Offset & 0xFF000000) >> 24) // 0
+                            
+                            let uint32RemainingData = UInt32(data.count - offset)
+                            let byte5 = UInt8(uint32RemainingData & 0x000000FF)         // 10
+                            let byte6 = UInt8((uint32RemainingData & 0x0000FF00) >> 8)  // 154
+                            let byte7 = UInt8((uint32RemainingData & 0x00FF0000) >> 16) // 0
+                            let byte8 = UInt8((uint32RemainingData & 0xFF000000) >> 24) // 0
+
+                            chunk.insert(byte1, at: 0)
+                            chunk.insert(byte2, at: 0)
+                            chunk.insert(byte3, at: 0)
+                            chunk.insert(byte4, at: 0)
+                            chunk.insert(byte5, at: 0)
+                            chunk.insert(byte6, at: 0)
+                            chunk.insert(byte7, at: 0)
+                            chunk.insert(byte8, at: 0)
+                            
+                            try socket.write(from: chunk, to: currentConnection.address!)
+                            offset += thisChunkSize
+                        } while (offset < data.count);
+                    }
+
                     
                 } catch let error {
                     
                     // See if it's a socket error or something else...
                     guard let socketError = error as? Socket.Error else {
-                        socket.close()
+                        //socket.close()
                         print("socket close")
                         print("Unexpected error...")
                         return
                     }
                     if socketError.errorCode != Int32(Socket.SOCKET_ERR_RECV_FAILED) {
-                        socket.close()
+                        //socket.close()
                         print("socket close")
                         print("testListenUDP Error reported 1: \(socketError.description)")
                     }
