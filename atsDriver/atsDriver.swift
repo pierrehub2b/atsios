@@ -143,6 +143,13 @@ class atsDriver: XCTestCase {
         }
     }
     
+    func scaledImage(img: UIImage, size: CGSize) -> UIImage {
+        UIGraphicsBeginImageContextWithOptions(size, false, 0.0)
+        defer { UIGraphicsEndImageContext() }
+        img.draw(in: CGRect(x: 0.0, y: 0.0, width: size.width, height: size.height))
+        return UIGraphicsGetImageFromCurrentImageContext()!
+    }
+    
     func runDatagramSocketListener() {
         if(!continueExecution) {
             return
@@ -156,7 +163,8 @@ class atsDriver: XCTestCase {
                 
                 print("Accepted connection from: \(self.udpSocket?.remotePath ?? self.udpSocket!.remoteHostname) on port \(self.udpSocket!.remotePort), Secure? \(self.udpSocket?.signature!.isSecure)")
                 let screenShotImage = XCUIScreen.main.screenshot().image
-                let dataImg = UIImagePNGRepresentation(screenShotImage) as! NSData
+                let sizedImg = self.scaledImage(img: screenShotImage, size: CGSize(width: self.deviceWidth, height: self.deviceHeight))
+                let dataImg = UIImagePNGRepresentation(sizedImg) as! NSData
                 let bytes = [UInt8](dataImg as NSData)
                 data.append(contentsOf: bytes)
                 let bufferSize = 1992
@@ -166,10 +174,9 @@ class atsDriver: XCTestCase {
                 repeat {
                     // get the length of the chunk
                     let thisChunkSize = ((data.count - offset) > bufferSize) ? bufferSize : (data.count - offset);
-                    
                     // get the chunk
                     var chunk = data.subdata(in: offset..<offset + thisChunkSize)
-                    
+                    offset += thisChunkSize
                     let uint32Offset = UInt32(offset)
                     let uint32RemainingData = UInt32(data.count - offset)
                     
@@ -180,7 +187,7 @@ class atsDriver: XCTestCase {
                     chunk.insert(contentsOf: offSetTable, at: 0)
                     
                     try self.udpSocket!.write(from: chunk, to: currentConnection.address!)
-                    offset += thisChunkSize
+                    
                 } while (offset < data.count);
                 print("Send srceenshot process is over")
                 self.runDatagramSocketListener()
@@ -222,7 +229,24 @@ class atsDriver: XCTestCase {
         return intType.bitWidth/UInt8.bitWidth
     }
     
-    func getEnumStringValue(rawValue: UInt) -> String {
+    func getStateStringValue(rawValue: UInt) -> String {
+        switch rawValue {
+        case 0:
+            return "unknown"
+        case 1:
+            return "notRunning"
+        case 2:
+            return "runningBackgroundSuspended"
+        case 3:
+            return "runningBackground"
+        case 4:
+            return "runningForeground"
+        default:
+            return "unknown"
+        }
+    }
+    
+    func getComponentTypeStringValue(rawValue: UInt) -> String {
         switch rawValue {
         case 0:
             return "any"
@@ -467,7 +491,7 @@ class atsDriver: XCTestCase {
                                         self.resultElement["message"] = "close ats driver"
                                     } else if(actionsEnum.INFO.rawValue == parameters[0]) {
                                         self.resultElement["status"] = 0
-                                        self.resultElement["message"] = "get info"
+                                        self.resultElement["info"] = self.getAppInfo()
                                     } else {
                                         self.resultElement["message"] = "missiing driver action type " + parameters[0]
                                         self.resultElement["status"] = -42
@@ -857,6 +881,32 @@ class atsDriver: XCTestCase {
         return tableToReturn
     }
     
+    func getAppInfo() -> String {
+        if(self.app != nil) {
+            let pattern = "'(.*?)'"
+            var packageName = self.matchingStrings(input: String(self.app.description), regex: pattern).first?[1]
+            var pid = ""
+            var debugDescriptionFirstLine = self.app.debugDescription.split(separator: "\n")[0]
+            var splitLine = debugDescriptionFirstLine.split(separator: ",")
+            for i in 0...splitLine.count {
+                if(splitLine[i].contains("pid")) {
+                    pid = pid.replacingOccurrences(of: "pid:", with: "").replacingOccurrences(of: " ", with: "")
+                }
+            }
+            var informations: [String:String] = [:]
+            informations["packageName"] = packageName
+            informations["activity"] = self.getStateStringValue(rawValue: self.app.state.rawValue)
+            informations["system"] = model + " " + osVersion
+            informations["label"] = self.app.label
+            informations["icon"] = ""
+            informations["version"] = pid
+            informations["os"] = "ios"
+            return self.convertIntoJSONString(arrayObject: informations)
+        } else {
+            return ""
+        }
+    }
+    
     func cleanString(input: String) -> String {
         var output = input.replacingOccurrences(of: "{", with: "")
         output = output.replacingOccurrences(of: "}", with: "")
@@ -887,6 +937,18 @@ class atsDriver: XCTestCase {
     }
     
     func convertIntoJSONString(arrayObject: UIElement) -> String {
+        do {
+            let jsonEncoder = JSONEncoder()
+            let jsonData = try jsonEncoder.encode(arrayObject)
+            let json = String(data: jsonData, encoding: String.Encoding.utf8) ?? "no values"
+            return json
+        } catch let error as NSError {
+            print("Array convertIntoJSON - \(error.description)")
+        }
+        return ""
+    }
+    
+    func convertIntoJSONString(arrayObject: [String:String]) -> String {
         do {
             let jsonEncoder = JSONEncoder()
             let jsonData = try jsonEncoder.encode(arrayObject)
