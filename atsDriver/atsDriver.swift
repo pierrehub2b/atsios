@@ -86,10 +86,10 @@ class atsDriver: XCTestCase {
     var thread: Thread! = nil
     
     var udpPort: Int = 47633
-    var listenSocket: Socket? = nil
+    var udpSocket: Socket? = nil
     var continueRunningValue = true
     var connectedSockets = [Int32: Socket]()
-    let socketLockQueue = DispatchQueue(label: "com.ibm.serverSwift.socketLockQueue")
+    var socketLockQueue = DispatchQueue.global(qos: .userInteractive)
     
     let osVersion = UIDevice.current.systemVersion
     let model = UIDevice.current.name
@@ -107,8 +107,6 @@ class atsDriver: XCTestCase {
          "menu","menuItem","menuBar","menuBarItem","map","webView","incrementArrow","decrementArrow","timeline","ratingIndicator","valueIndicator","splitGroup","splitter","relevanceIndicator","colorWell","helpTag","matte",
          "dockItem","ruler","rulerMarker","grid","levelIndicator","cell","layoutArea","layoutItem","handle","stepper","tab","touchBar","statusItem"
         ]
-    
-    //var udpThread: Thread!
 
     override func setUp() {
         super.setUp()
@@ -132,93 +130,88 @@ class atsDriver: XCTestCase {
                 break;
             }
         }
-        
-        let queue: DispatchQueue? = DispatchQueue.global(qos: .userInteractive)
-        guard let pQueue = queue else {
-            print("Unable to access global interactive QOS queue")
-            return
-        }
 
         do {
             // Create the socket..
-            let socket: Socket = try Socket.create(family: .inet, type: .datagram, proto: .udp)
-            
-            pQueue.async { [unowned self, socket] in
-                do {
-                    // Listen on the port...
-                    var data = Data()
-                    print("listening ... ")
-                    var currentConnection = try socket.listen(forMessage: &data, on: self.udpPort)
-                    //try socket.acceptClientConnection()
-                    
-                    
-                    print("Accepted connection from: \(socket.remotePath ?? socket.remoteHostname) on port \(socket.remotePort), Secure? \(socket.signature!.isSecure)")
-                    let screenShotImage = XCUIScreen.main.screenshot().image
-                    let dataImg = UIImagePNGRepresentation(screenShotImage) as! NSData
-                    let bytes = [UInt8](dataImg as NSData)
-                    data.append(contentsOf: bytes)
-                    let bufferSize = 1998
-                    var offset = 0
-                    var index: UInt8 = 0
-                    
-                    repeat {
-                        // get the length of the chunk
-                        let thisChunkSize = ((data.count - offset) > bufferSize) ? bufferSize : (data.count - offset);
-                        
-                        // get the chunk
-                        var chunk = data.subdata(in: offset..<offset + thisChunkSize)
-                        
-                        let uint32Offset = UInt32(offset)
-                        let byte1 = UInt8(uint32Offset & 0x000000FF)         // 10
-                        let byte2 = UInt8((uint32Offset & 0x0000FF00) >> 8)  // 154
-                        let byte3 = UInt8((uint32Offset & 0x00FF0000) >> 16) // 0
-                        let byte4 = UInt8((uint32Offset & 0xFF000000) >> 24) // 0
-                        
-                        let uint32RemainingData = UInt32(data.count - offset)
-                        let byte5 = UInt8(uint32RemainingData & 0x000000FF)         // 10
-                        let byte6 = UInt8((uint32RemainingData & 0x0000FF00) >> 8)  // 154
-                        let byte7 = UInt8((uint32RemainingData & 0x00FF0000) >> 16) // 0
-                        let byte8 = UInt8((uint32RemainingData & 0xFF000000) >> 24) // 0
-                        
-                        chunk.insert(byte1, at: 0)
-                        chunk.insert(byte2, at: 0)
-                        chunk.insert(byte3, at: 0)
-                        chunk.insert(byte4, at: 0)
-                        chunk.insert(byte5, at: 0)
-                        chunk.insert(byte6, at: 0)
-                        chunk.insert(byte7, at: 0)
-                        chunk.insert(byte8, at: 0)
-                        
-                        try socket.write(from: chunk, to: currentConnection.address!)
-                        offset += thisChunkSize
-                    } while (offset < data.count);•
-                } catch let error {
-                    
-                    // See if it's a socket error or something else...
-                    guard let socketError = error as? Socket.Error else {
-                        //socket.close()
-                        print("socket close")
-                        print("Unexpected error...")
-                        return
-                    }
-                    if socketError.errorCode != Int32(Socket.SOCKET_ERR_RECV_FAILED) {
-                        //socket.close()
-                        print("socket close")
-                        print("testListenUDP Error reported 1: \(socketError.description)")
-                    }
-                }
-            }
-            
-            
+            self.udpSocket = try Socket.create(family: .inet, type: .datagram, proto: .udp)
         } catch let error {
-            // See if it's a socket error or something else...
             guard let socketError = error as? Socket.Error else {
                 print("Unexpected error...")
                 return
             }
-            print("testListenUDP Error reported: \(socketError.description)")
-            
+            print("Error on socket instance creation: \(socketError.description)")
         }
+    }
+    
+    func runDatagramSocketListener() {
+        if(!continueExecution) {
+            return
+        }
+        socketLockQueue.async { [unowned self, udpSocket] in
+            do {
+                // Listen on the port...
+                var data = Data()
+                print("listening ... ")
+                var currentConnection = try self.udpSocket!.listen(forMessage: &data, on: self.udpPort)
+                
+                print("Accepted connection from: \(self.udpSocket?.remotePath ?? self.udpSocket!.remoteHostname) on port \(self.udpSocket!.remotePort), Secure? \(self.udpSocket?.signature!.isSecure)")
+                let screenShotImage = XCUIScreen.main.screenshot().image
+                let dataImg = UIImagePNGRepresentation(screenShotImage) as! NSData
+                let bytes = [UInt8](dataImg as NSData)
+                data.append(contentsOf: bytes)
+                let bufferSize = 1992
+                var offset = 0
+                var index: UInt8 = 0
+                
+                repeat {
+                    // get the length of the chunk
+                    let thisChunkSize = ((data.count - offset) > bufferSize) ? bufferSize : (data.count - offset);
+                    
+                    // get the chunk
+                    var chunk = data.subdata(in: offset..<offset + thisChunkSize)
+                    
+                    let uint32Offset = UInt32(offset)
+                    let uint32RemainingData = UInt32(data.count - offset)
+                    
+                    var offSetTable = self.toByteArrary(value: uint32Offset)
+                    var remainingDataTable = self.toByteArrary(value: uint32RemainingData)
+                    
+                    chunk.insert(contentsOf: remainingDataTable, at: 0)
+                    chunk.insert(contentsOf: offSetTable, at: 0)
+                    
+                    try self.udpSocket!.write(from: chunk, to: currentConnection.address!)
+                    offset += thisChunkSize
+                } while (offset < data.count);
+                print("Send srceenshot process is over")
+                self.runDatagramSocketListener()
+            } catch let error {
+                
+                // See if it's a socket error or something else...
+                guard let socketError = error as? Socket.Error else {
+                    //socket.close()
+                    print("socket close")
+                    print("Unexpected error...")
+                    return
+                }
+                if socketError.errorCode != Int32(Socket.SOCKET_ERR_RECV_FAILED) {
+                    //socket.close()
+                    print("socket close")
+                    print("testListenUDP Error reported 1: \(socketError.description)")
+                }
+            }
+        }
+    }
+    
+    func toByteArrary<T>(value: T)  -> [UInt8] where T: UnsignedInteger, T: FixedWidthInteger{
+        var bigEndian = value.bigEndian
+        let count = MemoryLayout<T>.size
+        let bytePtr = withUnsafePointer(to: &bigEndian) {
+            $0.withMemoryRebound(to: UInt8.self, capacity: count) {
+                UnsafeBufferPointer(start: $0, count: count)
+            }
+        }
+        
+        return Array(bytePtr)
     }
     
     func sizeof<T:FixedWidthInteger>(_ int:T) -> Int {
@@ -448,16 +441,18 @@ class atsDriver: XCTestCase {
                     case actionsEnum.DRIVER.rawValue:
                         if(parameters.count > 0) {
                             if(actionsEnum.START.rawValue == parameters[0]) {
+                                self.continueExecution = true
+                                self.runDatagramSocketListener()
                                 XCUIDevice.shared.press(.home)
                                 self.driverInfoBase()
                                 self.resultElement["status"] = 0
                                 self.resultElement["screenCapturePort"] = self.udpPort
-                                //self.thread.start()
                                 
                             } else {
                                 if(actionsEnum.STOP.rawValue == parameters[0]) {
                                     if(self.app != nil){
                                         self.app.terminate()
+                                        self.continueExecution = false
                                         XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
                                         self.resultElement["status"] = 0
                                         self.resultElement["message"] = "stop ats driver"
@@ -466,6 +461,7 @@ class atsDriver: XCTestCase {
                                     if(actionsEnum.QUIT.rawValue == parameters[0]) {
                                         //self.tearDown()
                                         self.app.terminate()
+                                        self.continueExecution = false
                                         XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
                                         self.resultElement["status"] = 0
                                         self.resultElement["message"] = "close ats driver"
