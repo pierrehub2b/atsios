@@ -94,8 +94,8 @@ class atsDriver: XCTestCase {
     let osVersion = UIDevice.current.systemVersion
     let model = UIDevice.current.name
     let uid = UIDevice.current.identifierForVendor!.uuidString
-    let deviceWidth = UIScreen.main.bounds.width
-    let deviceHeight = UIScreen.main.bounds.height
+    var deviceWidth = 0
+    var deviceHeight = 0
 
     var continueExecution = true
     
@@ -462,10 +462,12 @@ class atsDriver: XCTestCase {
                                 self.continueExecution = true
                                 self.runDatagramSocketListener()
                                 XCUIDevice.shared.press(.home)
+                                let screenShotImage = XCUIScreen.main.screenshot().image
+                                self.deviceWidth = Int(screenShotImage.size.width)
+                                self.deviceHeight = Int(screenShotImage.size.height)
                                 self.driverInfoBase()
                                 self.resultElement["status"] = 0
                                 self.resultElement["screenCapturePort"] = self.udpPort
-                                
                             } else {
                                 if(actionsEnum.STOP.rawValue == parameters[0]) {
                                     if(self.app != nil){
