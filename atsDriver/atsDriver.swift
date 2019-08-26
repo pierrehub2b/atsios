@@ -164,7 +164,8 @@ class atsDriver: XCTestCase {
                 print("Accepted connection from: \(self.udpSocket?.remotePath ?? self.udpSocket!.remoteHostname) on port \(self.udpSocket!.remotePort), Secure? \(self.udpSocket?.signature!.isSecure)")
                 let screenShotImage = XCUIScreen.main.screenshot().image
                 let sizedImg = self.scaledImage(img: screenShotImage, size: CGSize(width: self.deviceWidth, height: self.deviceHeight))
-                let dataImg = UIImagePNGRepresentation(sizedImg) as! NSData
+                let dataImg = UIImageJPEGRepresentation(sizedImg, 0.55) as! NSData
+                
                 let bytes = [UInt8](dataImg as NSData)
                 data.append(contentsOf: bytes)
                 let bufferSize = 2000
