@@ -156,28 +156,24 @@ class atsDriver: XCTestCase {
         }
         socketLockQueue.async { [unowned self, udpSocket] in
             do {
-                // Listen on the port...
-                var data = Data()
                 print("listening ... ")
+                var data = Data()
                 var currentConnection = try self.udpSocket!.listen(forMessage: &data, on: self.udpPort)
                 
                 print("Accepted connection from: \(self.udpSocket?.remotePath ?? self.udpSocket!.remoteHostname) on port \(self.udpSocket!.remotePort), Secure? \(self.udpSocket?.signature!.isSecure)")
                 let screenShotImage = XCUIScreen.main.screenshot().image
                 let sizedImg = self.scaledImage(img: screenShotImage, size: CGSize(width: self.deviceWidth, height: self.deviceHeight))
-                let dataImg = UIImageJPEGRepresentation(sizedImg, 0.55) as! NSData
-                
-                let bytes = [UInt8](dataImg as NSData)
-                data.append(contentsOf: bytes)
+                let dataImg = UIImageJPEGRepresentation(sizedImg, 0.50)
                 let bufferSize = 2000
                 var offset = 0
                 var index: UInt8 = 0
                 
                 repeat {
-                    let thisChunkSize = ((data.count - offset) > bufferSize) ? bufferSize : (data.count - offset);
-                    var chunk = data.subdata(in: offset..<offset + thisChunkSize)
+                    let thisChunkSize = ((dataImg!.count - offset) > bufferSize) ? bufferSize : (dataImg!.count - offset);
+                    var chunk = dataImg!.subdata(in: offset..<offset + thisChunkSize)
                     offset += thisChunkSize
                     let uint32Offset = UInt32(offset - thisChunkSize)
-                    let uint32RemainingData = UInt32(data.count - offset)
+                    let uint32RemainingData = UInt32(dataImg!.count - offset)
                     
                     var offSetTable = self.toByteArrary(value: uint32Offset)
                     var remainingDataTable = self.toByteArrary(value: uint32RemainingData)
@@ -186,7 +182,7 @@ class atsDriver: XCTestCase {
                     
                     try self.udpSocket!.write(from: chunk, to: currentConnection.address!)
                     
-                } while (offset < data.count);
+                } while (offset < dataImg!.count);
                 print("Send srceenshot process is over")
                 self.runDatagramSocketListener()
             } catch let error {
