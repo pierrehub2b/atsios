@@ -167,24 +167,21 @@ class atsDriver: XCTestCase {
                 let dataImg = UIImagePNGRepresentation(sizedImg) as! NSData
                 let bytes = [UInt8](dataImg as NSData)
                 data.append(contentsOf: bytes)
-                let bufferSize = 1992
+                let bufferSize = 2000
                 var offset = 0
                 var index: UInt8 = 0
                 
                 repeat {
-                    // get the length of the chunk
                     let thisChunkSize = ((data.count - offset) > bufferSize) ? bufferSize : (data.count - offset);
-                    // get the chunk
                     var chunk = data.subdata(in: offset..<offset + thisChunkSize)
                     offset += thisChunkSize
-                    let uint32Offset = UInt32(offset)
+                    let uint32Offset = UInt32(offset - thisChunkSize)
                     let uint32RemainingData = UInt32(data.count - offset)
                     
                     var offSetTable = self.toByteArrary(value: uint32Offset)
                     var remainingDataTable = self.toByteArrary(value: uint32RemainingData)
                     
-                    chunk.insert(contentsOf: remainingDataTable, at: 0)
-                    chunk.insert(contentsOf: offSetTable, at: 0)
+                    chunk.insert(contentsOf: offSetTable + remainingDataTable, at: 0)
                     
                     try self.udpSocket!.write(from: chunk, to: currentConnection.address!)
                     
