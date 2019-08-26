@@ -154,6 +154,7 @@ class atsDriver: XCTestCase {
         if(!continueExecution) {
             return
         }
+        socketLockQueue = DispatchQueue.global(qos: .userInteractive)
         socketLockQueue.async { [unowned self, udpSocket] in
             do {
                 print("listening ... ")
@@ -163,8 +164,8 @@ class atsDriver: XCTestCase {
                 print("Accepted connection from: \(self.udpSocket?.remotePath ?? self.udpSocket!.remoteHostname) on port \(self.udpSocket!.remotePort), Secure? \(self.udpSocket?.signature!.isSecure)")
                 let screenShotImage = XCUIScreen.main.screenshot().image
                 let sizedImg = self.scaledImage(img: screenShotImage, size: CGSize(width: self.deviceWidth, height: self.deviceHeight))
-                let dataImg = UIImageJPEGRepresentation(sizedImg, 0.50)
-                let bufferSize = 2000
+                let dataImg = UIImageJPEGRepresentation(sizedImg, 0)
+                let bufferSize = 4000
                 var offset = 0
                 var index: UInt8 = 0
                 
