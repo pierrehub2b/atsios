@@ -817,7 +817,7 @@ class atsDriver: XCTestCase {
                         identifier = (self.matchingStrings(input: String(str), regex: pattern).first?[1])!
                     }
                     if(str.contains("label")) {
-                        label = (self.matchingStrings(input: String(str), regex: pattern).first?[1])!
+                        label = self.cleanString(input: str.replacingOccurrences(of: "label:", with: "").replacingOccurrences(of: "'", with: ""))
                     }
                     if(str.contains("placeholderValue")) {
                         placeHolder = (self.matchingStrings(input: String(str), regex: pattern).first?[1])!
