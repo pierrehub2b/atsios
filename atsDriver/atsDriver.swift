@@ -22,59 +22,9 @@ import Embassy
 import EnvoyAmbassador
 import Socket
 
-struct UIElement: Codable {
-    let id: String
-    let tag: String
-    let clickable: Bool
-    let x: Double
-    let y: Double
-    let width: Double
-    let height: Double
-    var children: [UIElement]?
-    var attributes: [String:String]
-    let channelY: Double?
-    let channelHeight: Double?
-}
-
-enum actionsEnum: String {
-    case DRIVER = "driver"
-    case APP = "app"
-    case START = "start"
-    case STOP = "stop"
-    case SWITCH = "switch"
-    case CAPTURE = "capture"
-    case ELEMENT = "element"
-    case TAP = "tap"
-    case INPUT = "input"
-    case SWIPE = "swipe"
-    case BUTTON = "button"
-    case INFO = "info"
-    case QUIT = "quit"
-    case EMPTY = "&empty;"
-}
-
-enum deviceButtons: String {
-    case HOME = "home"
-    case SOUNDUP = "soundup"
-    case SOUNDDOWN = "sounddown"
-    case SILENTSWITCH = "silentswitch"
-    case LOCK = "lock"
-    case ENTER = "enter"
-    case RETURN = "return"
-    case ORIENTATION = "orientation"
-}
-
-struct Frame {
-    let label: String
-    let identifier: String
-    let placeHolderValue: String
-    let x: Double
-    let y: Double
-    let width: Double
-    let height: Double
-}
-
 class atsDriver: XCTestCase {
+    
+    let backgroundThread = DispatchQueue(label: "udpQueue", qos: .background)
     
     var port = 8080
     var app: XCUIApplication!
@@ -84,12 +34,11 @@ class atsDriver: XCTestCase {
     var captureStruct: String = ""
     var flatStruct: [String: Frame] = [:]
     var thread: Thread! = nil
-    
+    var currentlySendingImg = false
     var udpPort: Int = 47633
-    var udpSocket: Socket? = nil
     var continueRunningValue = true
     var connectedSockets = [Int32: Socket]()
-    var socketLockQueue = DispatchQueue.global(qos: .userInteractive)
+    var imgView: Data? = nil
     
     let osVersion = UIDevice.current.systemVersion
     let model = UIDevice.current.name
@@ -112,14 +61,13 @@ class atsDriver: XCTestCase {
         super.setUp()
         
         
+        backgroundThread.async {
+            self.udpStart()
+        }
+        
         XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
-        
-        self.thread = Thread(target: self, selector: Selector(("udpStart")), object: nil)
-        self.thread.start()
-        setupWebApp()
-        setupApp()
-        
-
+        self.setupWebApp()
+        self.setupApp()
     }
     
     func udpStart(){
@@ -132,8 +80,16 @@ class atsDriver: XCTestCase {
         }
 
         do {
-            // Create the socket..
-            self.udpSocket = try Socket.create(family: .inet, type: .datagram, proto: .udp)
+            var data = Data()
+            let socket = try Socket.create(family: .inet, type: .datagram, proto: .udp)
+            var currentConnection = try socket.listen(forMessage: &data, on: self.udpPort)
+            
+            repeat {
+                if(!currentlySendingImg) {
+                    print("Accepted connection from: \(socket.remoteHostname) on port \(socket.remotePort)")
+                    self.addNewConnection(socket: socket, currentConnection: currentConnection)
+                }
+            } while self.continueExecution
         } catch let error {
             guard let socketError = error as? Socket.Error else {
                 print("Unexpected error...")
@@ -143,65 +99,55 @@ class atsDriver: XCTestCase {
         }
     }
     
-    func scaledImage(img: UIImage, size: CGSize) -> UIImage {
-        UIGraphicsBeginImageContextWithOptions(size, false, 0.0)
-        defer { UIGraphicsEndImageContext() }
-        img.draw(in: CGRect(x: 0.0, y: 0.0, width: size.width, height: size.height))
-        return UIGraphicsGetImageFromCurrentImageContext()!
-    }
-    
-    func runDatagramSocketListener() {
-        if(!continueExecution) {
-            return
+    func addNewConnection(socket: Socket, currentConnection: (bytesRead: Int, address: Socket.Address?)) {
+        self.currentlySendingImg = true
+        let bufferSize = 4000
+        var offset = 0
+        var index: UInt8 = 0
+        
+        do {
+            print("Accepted connection from: \(socket.remotePath ?? socket.remoteHostname) on port \(socket.remotePort), Secure? \(socket.signature!.isSecure)")
+            let group = DispatchGroup()
+            group.enter()
+            DispatchQueue.global(qos: .default).async {
+                self.refreshView()
+                group.leave()
+            }
+            group.wait()
+            
+            var img = self.imgView
+            repeat {
+                let thisChunkSize = ((img!.count - offset) > bufferSize) ? bufferSize : (img!.count - offset);
+                var chunk = img!.subdata(in: offset..<offset + thisChunkSize)
+                offset += thisChunkSize
+                let uint32Offset = UInt32(offset - thisChunkSize)
+                let uint32RemainingData = UInt32(img!.count - offset)
+                
+                var offSetTable = self.toByteArrary(value: uint32Offset)
+                var remainingDataTable = self.toByteArrary(value: uint32RemainingData)
+                
+                chunk.insert(contentsOf: offSetTable + remainingDataTable, at: 0)
+                
+                try socket.write(from: chunk, to: currentConnection.address!)
+                
+            } while (offset < img!.count);
+            print("Send srceenshot process is over")
+            self.currentlySendingImg = false
         }
-        socketLockQueue = DispatchQueue.global(qos: .userInteractive)
-        socketLockQueue.async { [unowned self, udpSocket] in
-            do {
-                print("listening ... ")
-                var data = Data()
-                var currentConnection = try self.udpSocket!.listen(forMessage: &data, on: self.udpPort)
-                
-                print("Accepted connection from: \(self.udpSocket?.remotePath ?? self.udpSocket!.remoteHostname) on port \(self.udpSocket!.remotePort), Secure? \(self.udpSocket?.signature!.isSecure)")
-                let screenShotImage = XCUIScreen.main.screenshot().image
-                let sizedImg = self.scaledImage(img: screenShotImage, size: CGSize(width: self.deviceWidth, height: self.deviceHeight))
-                let dataImg = UIImageJPEGRepresentation(sizedImg, 0)
-                let bufferSize = 4000
-                var offset = 0
-                var index: UInt8 = 0
-                
-                repeat {
-                    let thisChunkSize = ((dataImg!.count - offset) > bufferSize) ? bufferSize : (dataImg!.count - offset);
-                    var chunk = dataImg!.subdata(in: offset..<offset + thisChunkSize)
-                    offset += thisChunkSize
-                    let uint32Offset = UInt32(offset - thisChunkSize)
-                    let uint32RemainingData = UInt32(dataImg!.count - offset)
-                    
-                    var offSetTable = self.toByteArrary(value: uint32Offset)
-                    var remainingDataTable = self.toByteArrary(value: uint32RemainingData)
-                    
-                    chunk.insert(contentsOf: offSetTable + remainingDataTable, at: 0)
-                    
-                    try self.udpSocket!.write(from: chunk, to: currentConnection.address!)
-                    
-                } while (offset < dataImg!.count);
-                print("Send srceenshot process is over")
-                self.runDatagramSocketListener()
-            } catch let error {
-                
-                // See if it's a socket error or something else...
-                guard let socketError = error as? Socket.Error else {
-                    //socket.close()
-                    print("socket close")
-                    print("Unexpected error...")
-                    return
-                }
-                if socketError.errorCode != Int32(Socket.SOCKET_ERR_RECV_FAILED) {
-                    //socket.close()
-                    print("socket close")
-                    print("testListenUDP Error reported 1: \(socketError.description)")
-                }
+        catch let error {
+            guard let socketError = error as? Socket.Error else {
+                print("Unexpected error by connection at \(socket.remoteHostname):\(socket.remotePort)...")
+                return
+            }
+            if self.continueExecution {
+                print("Error reported by connection at \(socket.remoteHostname):\(socket.remotePort):\n \(socketError.description)")
             }
         }
+
+    }
+    
+    func refreshView() {
+        self.imgView = UIImageJPEGRepresentation(XCUIScreen.main.screenshot().image, 0)
     }
     
     func toByteArrary<T>(value: T)  -> [UInt8] where T: UnsignedInteger, T: FixedWidthInteger{
@@ -214,204 +160,6 @@ class atsDriver: XCTestCase {
         }
         
         return Array(bytePtr)
-    }
-    
-    func sizeof<T:FixedWidthInteger>(_ int:T) -> Int {
-        return int.bitWidth/UInt8.bitWidth
-    }
-    
-    func sizeof<T:FixedWidthInteger>(_ intType:T.Type) -> Int {
-        return intType.bitWidth/UInt8.bitWidth
-    }
-    
-    func getStateStringValue(rawValue: UInt) -> String {
-        switch rawValue {
-        case 0:
-            return "unknown"
-        case 1:
-            return "notRunning"
-        case 2:
-            return "runningBackgroundSuspended"
-        case 3:
-            return "runningBackground"
-        case 4:
-            return "runningForeground"
-        default:
-            return "unknown"
-        }
-    }
-    
-    func getComponentTypeStringValue(rawValue: UInt) -> String {
-        switch rawValue {
-        case 0:
-            return "any"
-        case 1:
-            return "other"
-        case 2:
-            return "application"
-        case 3:
-            return "group"
-        case 4:
-            return "window"
-        case 5:
-            return "sheet"
-        case 6:
-            return "drawer"
-        case 7:
-            return "alert"
-        case 8:
-            return "dialog"
-        case 9:
-            return "button"
-        case 10:
-            return "radioButton"
-        case 11:
-            return "radioGrouo"
-        case 12:
-            return "checkBox"
-        case 13:
-            return "disclosureTriangle"
-        case 14:
-            return "popUpButton"
-        case 15:
-            return "comboBox"
-        case 16:
-            return "menuButton"
-        case 17:
-            return "toolbarButton"
-        case 18:
-            return "popOver"
-        case 19:
-            return "keyboard"
-        case 20:
-            return "key"
-        case 21:
-            return "navigationBar"
-        case 22:
-            return "tabBar"
-        case 23:
-            return "tabGroup"
-        case 24:
-            return "toolBar"
-        case 25:
-            return "statusBar"
-        case 26:
-            return "table"
-        case 27:
-            return "tableRow"
-        case 28:
-            return "tableColumn"
-        case 29:
-            return "outline"
-        case 30:
-            return "outlineRow"
-        case 31:
-            return "browser"
-        case 32:
-            return "collectionView"
-        case 33:
-            return "slider"
-        case 34:
-            return "pageIndicator"
-        case 35:
-            return "progressIndicator"
-        case 36:
-            return "activityIndicator"
-        case 37:
-            return "segmentedControl"
-        case 38:
-            return "picker"
-        case 39:
-            return "pickerWheel"
-        case 40:
-            return "switch"
-        case 41:
-            return "toggle"
-        case 42:
-            return "link"
-        case 43:
-            return "image"
-        case 44:
-            return "icon"
-        case 45:
-            return "searchField"
-        case 46:
-            return "scrollView"
-        case 47:
-            return "scrollBar"
-        case 48:
-            return "staticText"
-        case 49:
-            return "textField"
-        case 50:
-            return "secureTextField"
-        case 51:
-            return "datePicker"
-        case 52:
-            return "textView"
-        case 53:
-            return "menu"
-        case 54:
-            return "menuItem"
-        case 55:
-            return "menuBar"
-        case 56:
-            return "menuBarItem"
-        case 57:
-            return "map"
-        case 58:
-            return "webView"
-        case 59:
-            return "incrementArrow"
-        case 60:
-            return "decrementArrow"
-        case 61:
-            return "timeline"
-        case 62:
-            return "ratingIndicator"
-        case 63:
-            return "valueIndicator"
-        case 64:
-            return "splitGroup"
-        case 65:
-            return "splitter"
-        case 66:
-            return "relevanceIndicator"
-        case 67:
-            return "colorWell"
-        case 68:
-            return "helpTag"
-        case 69:
-            return "matte"
-        case 70:
-            return "dockItem"
-        case 71:
-            return "ruler"
-        case 72:
-            return "rulerMarker"
-        case 73:
-            return "grid"
-        case 74:
-            return "levelIndicator"
-        case 75:
-            return "cell"
-        case 76:
-            return "layoutArea"
-        case 77:
-            return "layoutItem"
-        case 78:
-            return "handle"
-        case 79:
-            return "stepper"
-        case 80:
-            return "tab"
-        case 81:
-            return "touchBar"
-        case 82:
-            return "statusItem"
-        default:
-            return "any"
-        }
     }
     
     // setup the Embassy web server for testing
@@ -457,11 +205,10 @@ class atsDriver: XCTestCase {
                 self.resultElement["message"] = "unknow command"
             } else {
                 switch action {
-                    case actionsEnum.DRIVER.rawValue:
+                case ActionsEnum.DRIVER.rawValue:
                         if(parameters.count > 0) {
-                            if(actionsEnum.START.rawValue == parameters[0]) {
+                            if(ActionsEnum.START.rawValue == parameters[0]) {
                                 self.continueExecution = true
-                                self.runDatagramSocketListener()
                                 XCUIDevice.shared.press(.home)
                                 let screenShotImage = XCUIScreen.main.screenshot().image
                                 self.deviceWidth = Int(screenShotImage.size.width)
@@ -470,7 +217,7 @@ class atsDriver: XCTestCase {
                                 self.resultElement["status"] = 0
                                 self.resultElement["screenCapturePort"] = self.udpPort
                             } else {
-                                if(actionsEnum.STOP.rawValue == parameters[0]) {
+                                if(ActionsEnum.STOP.rawValue == parameters[0]) {
                                     if(self.app != nil){
                                         self.app.terminate()
                                         self.continueExecution = false
@@ -479,14 +226,14 @@ class atsDriver: XCTestCase {
                                         self.resultElement["message"] = "stop ats driver"
                                     }
                                 } else {
-                                    if(actionsEnum.QUIT.rawValue == parameters[0]) {
+                                    if(ActionsEnum.QUIT.rawValue == parameters[0]) {
                                         //self.tearDown()
                                         self.app.terminate()
                                         self.continueExecution = false
                                         XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
                                         self.resultElement["status"] = 0
                                         self.resultElement["message"] = "close ats driver"
-                                    } else if(actionsEnum.INFO.rawValue == parameters[0]) {
+                                    } else if(ActionsEnum.INFO.rawValue == parameters[0]) {
                                         self.resultElement["status"] = 0
                                         self.resultElement["info"] = self.getAppInfo()
                                     } else {
@@ -500,14 +247,14 @@ class atsDriver: XCTestCase {
                             self.resultElement["status"] = -41
                         }
                         break
-                    case actionsEnum.BUTTON.rawValue:
+                    case ActionsEnum.BUTTON.rawValue:
                         if(parameters.count > 0) {
-                            if(deviceButtons.HOME.rawValue == parameters[0]) {
+                            if(DeviceButtons.HOME.rawValue == parameters[0]) {
                                 XCUIDevice.shared.press(.home)
                                 self.resultElement["status"] = 0
                                 self.resultElement["message"] = "press home button"
                             } else {
-                                if(deviceButtons.ORIENTATION.rawValue == parameters[0]) {
+                                if(DeviceButtons.ORIENTATION.rawValue == parameters[0]) {
                                     if(XCUIDevice.shared.orientation == .landscapeLeft) {
                                         XCUIDevice.shared.orientation = .portrait
                                         self.resultElement["status"] = 0
@@ -528,7 +275,7 @@ class atsDriver: XCTestCase {
                             self.resultElement["status"] = -41
                         }
                         break
-                    case actionsEnum.CAPTURE.rawValue:
+                    case ActionsEnum.CAPTURE.rawValue:
                         self.allElements = nil
                         self.flatStruct = [:]
                         if(self.app == nil) {
@@ -574,7 +321,7 @@ class atsDriver: XCTestCase {
 
                         self.captureStruct = self.convertIntoJSONString(arrayObject: rootNode)
                         break
-                    case actionsEnum.ELEMENT.rawValue:
+                    case ActionsEnum.ELEMENT.rawValue:
                         if(parameters.count > 1) {
                             let flatElement = self.flatStruct[parameters[0]]
                             var element: XCUIElement? = nil
@@ -591,11 +338,11 @@ class atsDriver: XCTestCase {
                                 self.resultElement["message"] = "element not in the screen"
                             }
                             if(element != nil) {
-                                if(actionsEnum.INPUT.rawValue == parameters[1]) {
+                                if(ActionsEnum.INPUT.rawValue == parameters[1]) {
                                     let text = parameters[2]
                                     if(element!.elementType.rawValue == 49 || element!.elementType.rawValue == 50 || element!.elementType.rawValue == 45) {
                                         element?.tap()
-                                        if(text == actionsEnum.EMPTY.rawValue) {
+                                        if(text == ActionsEnum.EMPTY.rawValue) {
                                             let deleteString = String(repeating: XCUIKeyboardKey.delete.rawValue, count: (element?.value as? String)?.count ?? 0)
                                             element?.typeText(deleteString)
                                             self.resultElement["status"] = 0
@@ -621,12 +368,12 @@ class atsDriver: XCTestCase {
                                     let calculateX = Double(element?.frame.minX ?? 0) + Double(offSetX)
                                     let calculateY = Double(element?.frame.minY ?? 0) + Double(offSetY)
                                     
-                                    if(actionsEnum.TAP.rawValue == parameters[1]) {
+                                    if(ActionsEnum.TAP.rawValue == parameters[1]) {
                                         self.tapCoordinate(at: calculateX, and: calculateY)
                                         self.resultElement["status"] = 0
                                         self.resultElement["message"] = "tap on element"
                                     } else {
-                                        if(actionsEnum.SWIPE.rawValue == parameters[1]) {
+                                        if(ActionsEnum.SWIPE.rawValue == parameters[1]) {
                                             let directionX = Double(parameters[4]) ?? 0.0
                                             let directionY = Double(parameters[5]) ?? 0.0
                                             if(directionX > 0.0) {
@@ -655,9 +402,9 @@ class atsDriver: XCTestCase {
                             self.resultElement["status"] = -41
                         }
                         break
-                    case actionsEnum.APP.rawValue:
+                    case ActionsEnum.APP.rawValue:
                         if(parameters.count > 1) {
-                            if(actionsEnum.START.rawValue == parameters[0]) {
+                            if(ActionsEnum.START.rawValue == parameters[0]) {
                                 self.app = XCUIApplication(bundleIdentifier: parameters[1])
                                 self.app.launch();
                                 self.resultElement["message"] = "start app " + parameters[1]
@@ -666,13 +413,13 @@ class atsDriver: XCTestCase {
                                 self.resultElement["icon"] = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAC4jAAAuIwF4pT92AAAAB3RJTUUH4wgNCzQS2tg9zgAAABl0RVh0Q29tbWVudABDcmVhdGVkIHdpdGggR0lNUFeBDhcAAAAMSURBVAjXY2DY/QYAAmYBqC0q4zEAAAAASUVORK5CYII="
                                 self.resultElement["version"] = "0.0.0"
                             } else {
-                                if(actionsEnum.SWITCH.rawValue == parameters[0]) {
+                                if(ActionsEnum.SWITCH.rawValue == parameters[0]) {
                                     self.app = XCUIApplication(bundleIdentifier: parameters[1])
                                     self.app.activate()
                                     self.resultElement["message"] = "switch app " + parameters[1]
                                     self.resultElement["status"] = 0
                                 } else {
-                                    if(actionsEnum.STOP.rawValue == parameters[0]) {
+                                    if(ActionsEnum.STOP.rawValue == parameters[0]) {
                                         self.app = XCUIApplication(bundleIdentifier: parameters[1])
                                         self.app.terminate()
                                         self.resultElement["message"] = "stop app " + parameters[1]
@@ -690,7 +437,7 @@ class atsDriver: XCTestCase {
                             self.resultElement["status"] = -41
                         }
                         break
-                    case actionsEnum.INFO.rawValue:
+                    case ActionsEnum.INFO.rawValue:
                         self.driverInfoBase()
                         self.resultElement["message"] = "device capabilities"
                         self.resultElement["status"] = 0
@@ -708,7 +455,7 @@ class atsDriver: XCTestCase {
                     }
             }
             
-            if(action == actionsEnum.CAPTURE.rawValue) {
+            if(action == ActionsEnum.CAPTURE.rawValue) {
                 sendBody(Data(self.captureStruct.utf8))
             } else {
                 if let theJSONData = try?  JSONSerialization.data(
@@ -892,7 +639,7 @@ class atsDriver: XCTestCase {
             }
             var informations: [String:String] = [:]
             informations["packageName"] = packageName
-            informations["activity"] = self.getStateStringValue(rawValue: self.app.state.rawValue)
+            informations["activity"] = getStateStringValue(rawValue: self.app.state.rawValue)
             informations["system"] = model + " " + osVersion
             informations["label"] = self.app.label
             informations["icon"] = ""
@@ -994,10 +741,6 @@ class atsDriver: XCTestCase {
         app.launchEnvironment["ENVOY_BASEURL"] = "http://localhost:\(self.port)"
     }
     
-    override func tearDown() {
-        super.tearDown()
-    }
-    
     func driverInfoBase() {
         self.resultElement["os"] = "ios"
         self.resultElement["driverVersion"] = "1.0.0"
@@ -1010,11 +753,7 @@ class atsDriver: XCTestCase {
         self.resultElement["channelY"] = 0
     }
     
-    func testExecuteCommand() {
-        while continueExecution {
-            
-        }
-    }
+
     
     func checkTcpPortForListen(port: in_port_t) -> (Bool, descr: String) {
         
@@ -1095,5 +834,15 @@ class atsDriver: XCTestCase {
         freeifaddrs(ifaddr)
         
         return address
+    }
+    
+    override func tearDown() {
+        super.tearDown()
+    }
+    
+    func testExecuteCommand() {
+        while continueExecution {
+            
+        }
     }
 }
