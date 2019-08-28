@@ -43,8 +43,12 @@ class atsDriver: XCTestCase {
     let osVersion = UIDevice.current.systemVersion
     let model = UIDevice.current.name
     let uid = UIDevice.current.identifierForVendor!.uuidString
-    var deviceWidth = 0
-    var deviceHeight = 0
+    var deviceWidth = 0.0
+    var deviceHeight = 0.0
+    let maxHeight = 860.0
+    var ratioScreen = 1.0
+    var ratioWidth = 1.0
+    var ratioHeight = 1.0
 
     var continueExecution = true
     
@@ -86,7 +90,6 @@ class atsDriver: XCTestCase {
             
             repeat {
                 if(!currentlySendingImg) {
-                    print("Accepted connection from: \(socket.remoteHostname) on port \(socket.remotePort)")
                     self.addNewConnection(socket: socket, currentConnection: currentConnection)
                 }
             } while self.continueExecution
@@ -106,7 +109,6 @@ class atsDriver: XCTestCase {
         var index: UInt8 = 0
         
         do {
-            print("Accepted connection from: \(socket.remotePath ?? socket.remoteHostname) on port \(socket.remotePort), Secure? \(socket.signature!.isSecure)")
             let group = DispatchGroup()
             group.enter()
             DispatchQueue.global(qos: .default).async {
@@ -131,7 +133,6 @@ class atsDriver: XCTestCase {
                 try socket.write(from: chunk, to: currentConnection.address!)
                 
             } while (offset < img!.count);
-            print("Send srceenshot process is over")
             self.currentlySendingImg = false
         }
         catch let error {
@@ -147,7 +148,16 @@ class atsDriver: XCTestCase {
     }
     
     func refreshView() {
-        self.imgView = UIImageJPEGRepresentation(XCUIScreen.main.screenshot().image, 0)
+        var img = self.imageResize(with: XCUIScreen.main.screenshot().image)
+        self.imgView = UIImageJPEGRepresentation(img, 0)
+    }
+    
+    func imageResize(with image: UIImage) -> UIImage {
+        UIGraphicsBeginImageContextWithOptions(CGSize(width: self.deviceWidth, height: self.deviceHeight), false, 1.0)
+        image.draw(in: CGRect(x: 0, y: 0, width: self.deviceWidth, height: self.deviceHeight))
+        let newImage = UIGraphicsGetImageFromCurrentImageContext()
+        UIGraphicsEndImageContext()
+        return newImage ?? UIImage()
     }
     
     func toByteArrary<T>(value: T)  -> [UInt8] where T: UnsignedInteger, T: FixedWidthInteger{
@@ -209,10 +219,20 @@ class atsDriver: XCTestCase {
                         if(parameters.count > 0) {
                             if(ActionsEnum.START.rawValue == parameters[0]) {
                                 self.continueExecution = true
-                                XCUIDevice.shared.press(.home)
-                                let screenShotImage = XCUIScreen.main.screenshot().image
-                                self.deviceWidth = Int(screenShotImage.size.width)
-                                self.deviceHeight = Int(screenShotImage.size.height)
+                                
+                                let screenBounds = UIScreen.main.bounds
+                                let screenScale = UIScreen.main.scale
+                                let screenSize = CGSize(width: screenBounds.size.width * screenScale, height: screenBounds.size.height * screenScale)
+                                
+                                self.deviceWidth = Double(screenSize.width)
+                                self.deviceHeight = Double(screenSize.height)
+                                
+                                if(self.deviceHeight > self.maxHeight) {
+                                    self.ratioScreen = self.maxHeight / self.deviceHeight
+                                    self.deviceWidth = self.deviceWidth * self.ratioScreen
+                                    self.deviceHeight = self.deviceHeight * self.ratioScreen
+                                }
+                                
                                 self.driverInfoBase()
                                 self.resultElement["status"] = 0
                                 self.resultElement["screenCapturePort"] = self.udpPort
@@ -287,6 +307,23 @@ class atsDriver: XCTestCase {
                         let description = self.app.debugDescription
                         var descriptionTable = description.split(separator: "\n")
                         var leveledTable: [(Int,String)] = [(Int,String)]()
+                        
+                        //get first line for ratio
+                        let firstLine = String(descriptionTable[3])
+                        var splitFirstLine = firstLine.split(separator: ",")
+                        let w = Double(self.cleanString(input: String(splitFirstLine[4]))) as! Double
+                        let h = Double(self.cleanString(input: String(splitFirstLine[5]))) as! Double
+                        
+                        if(h != self.deviceHeight) {
+                            self.ratioHeight = self.deviceHeight / h
+                        }
+                        
+                        if(w != self.deviceWidth) {
+                            self.ratioWidth = self.deviceWidth / w
+                        }
+                        
+                        
+                        
                         for index in 3...descriptionTable.count-8 {
                             //no traitment of line that are not reference composants
                             var currentLine = String(descriptionTable[index])
@@ -305,18 +342,23 @@ class atsDriver: XCTestCase {
                         var rootLine = leveledTable[0].1.split(separator: ",")
                         let levelUID = UUID().uuidString
                         
+                        var x = Double(self.cleanString(input: String(rootLine[2]))) as! Double
+                        var y = Double(self.cleanString(input: String(rootLine[3]))) as! Double
+                        var width = Double(self.cleanString(input: String(rootLine[4]))) as! Double
+                        var height = Double(self.cleanString(input: String(rootLine[5]))) as! Double
+                        
                         let rootNode = UIElement(
                             id: levelUID,
                             tag: "root",
                             clickable: false,
-                            x: Double(self.cleanString(input: String(rootLine[2]))) as! Double,
-                            y: Double(self.cleanString(input: String(rootLine[3]))) as! Double,
-                            width: Double(self.cleanString(input: String(rootLine[4]))) as! Double,
-                            height: Double(self.cleanString(input: String(rootLine[5]))) as! Double,
+                            x: x * self.ratioWidth,
+                            y: y * self.ratioHeight,
+                            width: width * self.ratioWidth,
+                            height: height * self.ratioHeight,
                             children: self.getChildrens(currentLevel: 1, currentIndex: 0, endedIndex: leveledTable.count-1, leveledTable: leveledTable),
                             attributes: [:],
                             channelY: 0,
-                            channelHeight: Double(self.cleanString(input: String(rootLine[5])))
+                            channelHeight: height * self.ratioHeight
                         )
 
                         self.captureStruct = self.convertIntoJSONString(arrayObject: rootNode)
@@ -609,10 +651,10 @@ class atsDriver: XCTestCase {
                     id: levelUID,
                     tag: self.cleanString(input: String(splittedLine[0])),
                     clickable: true,
-                    x: x,
-                    y: y,
-                    width: width,
-                    height: height,
+                    x: x * self.ratioWidth,
+                    y: y * self.ratioHeight,
+                    width: width * self.ratioWidth,
+                    height: height * self.ratioHeight,
                     children: self.getChildrens(currentLevel: currentLevel+1, currentIndex: line+1, endedIndex: endIn, leveledTable: leveledTable),
                     attributes: attr,
                     channelY: nil,
@@ -629,21 +671,13 @@ class atsDriver: XCTestCase {
         if(self.app != nil) {
             let pattern = "'(.*?)'"
             var packageName = self.matchingStrings(input: String(self.app.description), regex: pattern).first?[1]
-            var pid = ""
-            var debugDescriptionFirstLine = self.app.debugDescription.split(separator: "\n")[0]
-            var splitLine = debugDescriptionFirstLine.split(separator: ",")
-            for i in 0...splitLine.count {
-                if(splitLine[i].contains("pid")) {
-                    pid = pid.replacingOccurrences(of: "pid:", with: "").replacingOccurrences(of: " ", with: "")
-                }
-            }
             var informations: [String:String] = [:]
             informations["packageName"] = packageName
             informations["activity"] = getStateStringValue(rawValue: self.app.state.rawValue)
             informations["system"] = model + " " + osVersion
             informations["label"] = self.app.label
             informations["icon"] = ""
-            informations["version"] = pid
+            informations["version"] = ""
             informations["os"] = "ios"
             return self.convertIntoJSONString(arrayObject: informations)
         } else {
