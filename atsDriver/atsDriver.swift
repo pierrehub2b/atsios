@@ -34,7 +34,6 @@ class atsDriver: XCTestCase {
     var captureStruct: String = ""
     var flatStruct: [String: Frame] = [:]
     var thread: Thread! = nil
-    var currentlySendingImg = false
     var udpPort: Int = 47633
     var continueRunningValue = true
     var connectedSockets = [Int32: Socket]()
@@ -89,10 +88,8 @@ class atsDriver: XCTestCase {
             var currentConnection = try socket.listen(forMessage: &data, on: self.udpPort)
             
             repeat {
-                if(!currentlySendingImg) {
-                    self.addNewConnection(socket: socket, currentConnection: currentConnection)
-                }
-            } while self.continueExecution
+                self.addNewConnection(socket: socket, currentConnection: currentConnection)
+            } while true
         } catch let error {
             guard let socketError = error as? Socket.Error else {
                 print("Unexpected error...")
@@ -103,7 +100,6 @@ class atsDriver: XCTestCase {
     }
     
     func addNewConnection(socket: Socket, currentConnection: (bytesRead: Int, address: Socket.Address?)) {
-        self.currentlySendingImg = true
         let bufferSize = 4000
         var offset = 0
         var index: UInt8 = 0
@@ -133,7 +129,6 @@ class atsDriver: XCTestCase {
                 try socket.write(from: chunk, to: currentConnection.address!)
                 
             } while (offset < img!.count);
-            self.currentlySendingImg = false
         }
         catch let error {
             guard let socketError = error as? Socket.Error else {
@@ -220,12 +215,9 @@ class atsDriver: XCTestCase {
                             if(ActionsEnum.START.rawValue == parameters[0]) {
                                 self.continueExecution = true
                                 
-                                let screenBounds = UIScreen.main.bounds
-                                let screenScale = UIScreen.main.scale
-                                let screenSize = CGSize(width: screenBounds.size.width * screenScale, height: screenBounds.size.height * screenScale)
-                                
-                                self.deviceWidth = Double(screenSize.width)
-                                self.deviceHeight = Double(screenSize.height)
+                                let screenNativeBounds = XCUIScreen.main.screenshot().image
+                                self.deviceWidth = Double(screenNativeBounds.size.width)
+                                self.deviceHeight = Double(screenNativeBounds.size.height)
                                 
                                 if(self.deviceHeight > self.maxHeight) {
                                     self.ratioScreen = self.maxHeight / self.deviceHeight
@@ -358,7 +350,7 @@ class atsDriver: XCTestCase {
                             children: self.getChildrens(currentLevel: 1, currentIndex: 0, endedIndex: leveledTable.count-1, leveledTable: leveledTable),
                             attributes: [:],
                             channelY: 0,
-                            channelHeight: height * self.ratioHeight
+                            channelHeight: Double(self.cleanString(input: String(rootLine[5])))
                         )
 
                         self.captureStruct = self.convertIntoJSONString(arrayObject: rootNode)
