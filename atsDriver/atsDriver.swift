@@ -358,6 +358,11 @@ class atsDriver: XCTestCase {
                     case ActionsEnum.ELEMENT.rawValue:
                         if(parameters.count > 1) {
                             let flatElement = self.flatStruct[parameters[0]]
+                            if(flatElement == nil) {
+                                self.resultElement["status"] = -21
+                                self.resultElement["message"] = "missing element"
+                                break
+                            }
                             var element: XCUIElement? = nil
                             if(flatElement?.label != "") {
                                 element = self.retrieveElement(parameter: "label", field: flatElement!.label)
@@ -596,19 +601,23 @@ class atsDriver: XCTestCase {
                 let pattern = "'(.*?)'"
                 for str in splittedLine {
                     if(str.contains("identifier")) {
-                        identifier = (self.matchingStrings(input: String(str), regex: pattern).first?[1])!
+                        var currentIdentifier = (self.matchingStrings(input: String(str), regex: pattern).first?[1])!
+                        identifier = currentIdentifier.components(separatedBy: CharacterSet.symbols).joined()
                     }
                     if(str.contains("label")) {
-                        label = self.cleanString(input: str.replacingOccurrences(of: "label:", with: "").replacingOccurrences(of: "'", with: ""))
+                        var currentLabel = self.cleanString(input: str.replacingOccurrences(of: "label:", with: "").replacingOccurrences(of: "'", with: ""))
+                        label = currentLabel.components(separatedBy: CharacterSet.symbols).joined()
                     }
                     if(str.contains("placeholderValue")) {
-                        placeHolder = (self.matchingStrings(input: String(str), regex: pattern).first?[1])!
+                        var currentPlaceHolder = (self.matchingStrings(input: String(str), regex: pattern).first?[1])!
+                        placeHolder = currentPlaceHolder.components(separatedBy: CharacterSet.symbols).joined()
                     }
                     if(str.contains("value")) {
                         var valueTable = str.split(separator: ":")
                         if(valueTable.count == 2) {
                             let val = valueTable[1]
-                            value = val.trimmingCharacters(in: .whitespacesAndNewlines)
+                            var currentValue = val.trimmingCharacters(in: .whitespacesAndNewlines)
+                            value = currentValue.components(separatedBy: CharacterSet.symbols).joined()
                         }
                     }
                 }
