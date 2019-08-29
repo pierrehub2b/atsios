@@ -29,10 +29,10 @@ class atsDriver: XCTestCase {
     var port = 8080
     var app: XCUIApplication!
     var currentAppIdentifier: String = ""
-    var allElements: UIElement? = nil
     var resultElement: [String: Any] = [:]
     var captureStruct: String = ""
     var flatStruct: [String: Frame] = [:]
+    var tmpFlatStruct: [String: Frame] = [:]
     var thread: Thread! = nil
     var udpPort: Int = 47633
     var continueRunningValue = true
@@ -288,8 +288,7 @@ class atsDriver: XCTestCase {
                         }
                         break
                     case ActionsEnum.CAPTURE.rawValue:
-                        self.allElements = nil
-                        self.flatStruct = [:]
+                        self.tmpFlatStruct = [:]
                         if(self.app == nil) {
                             self.resultElement["message"] = "no app has been launched"
                             self.resultElement["status"] = -99
@@ -316,7 +315,7 @@ class atsDriver: XCTestCase {
                         
                         
                         
-                        for index in 3...descriptionTable.count-8 {
+                        for index in 3...descriptionTable.count-1 {
                             //no traitment of line that are not reference composants
                             var currentLine = String(descriptionTable[index])
                             var blankSpacesAtStart = 0
@@ -328,7 +327,11 @@ class atsDriver: XCTestCase {
                                 }
                             }
                             let level = (blankSpacesAtStart / 2) - 1
-                            leveledTable.append((level, currentLine))
+                            if(level > 0) {
+                                leveledTable.append((level, currentLine))
+                            } else {
+                                break
+                            }
                         }
                         
                         var rootLine = leveledTable[0].1.split(separator: ",")
@@ -352,7 +355,7 @@ class atsDriver: XCTestCase {
                             channelY: 0,
                             channelHeight: Double(self.cleanString(input: String(rootLine[5])))
                         )
-
+                        self.flatStruct = self.tmpFlatStruct
                         self.captureStruct = self.convertIntoJSONString(arrayObject: rootNode)
                         break
                     case ActionsEnum.ELEMENT.rawValue:
@@ -549,122 +552,128 @@ class atsDriver: XCTestCase {
     
     func getChildrens(currentLevel: Int, currentIndex: Int, endedIndex: Int, leveledTable: [(Int,String)]) -> [UIElement] {
         var tableToReturn: [UIElement] = [UIElement]()
-        for line in currentIndex...leveledTable.count-1 {
-            let levelUID = UUID().uuidString
-            let currentLine = leveledTable[line]
-            var splittedLine: [String] = [String]()
-            
-            var currentString = ""
-            var stopSplitting = false
-            var index = 0
-            var isValue = false
-            for char in currentLine.1 {
-                if(isValue) {
-                    currentString += String(char)
-                    if((index + 1) == currentLine.1.count) {
+        if(currentIndex < leveledTable.count-1) {
+            for line in currentIndex...leveledTable.count-1 {
+                let levelUID = UUID().uuidString
+                let currentLine = leveledTable[line]
+                var splittedLine: [String] = [String]()
+                
+                var currentString = ""
+                var stopSplitting = false
+                var index = 0
+                var isValue = false
+                for char in currentLine.1 {
+                    if(isValue) {
+                        currentString += String(char)
+                        if((index + 1) == currentLine.1.count) {
+                            splittedLine.append(currentString)
+                        }
+                    } else if(currentString.contains("value")) {
+                        isValue = !isValue
+                        currentString += String(char)
+                    } else if(char == "," && !stopSplitting){
                         splittedLine.append(currentString)
-                    }
-                } else if(currentString.contains("value")) {
-                    isValue = !isValue
-                    currentString += String(char)
-                } else if(char == "," && !stopSplitting){
-                    splittedLine.append(currentString)
-                    currentString = ""
-                } else {
-                    if(char == "'") {
-                        stopSplitting = !stopSplitting
-                    }
-                    currentString += String(char)
-                    if((index + 1) == currentLine.1.count) {
-                        splittedLine.append(currentString)
-                    }
-                }
-                index += 1
-            }
-            
-            if(currentLine.0 == currentLevel && endedIndex >= line) {
-                var endIn = line + 1
-                for el in endIn...leveledTable.count-1 {
-                    if(leveledTable[el].0 >= currentLevel+1) {
-                        endIn += 1
+                        currentString = ""
                     } else {
-                        break
-                    }
-                }
-                
-                var attr: [String: String] = [String: String]()
-                
-                var label = ""
-                var placeHolder = ""
-                var identifier = ""
-                var value = ""
-                let pattern = "'(.*?)'"
-                for str in splittedLine {
-                    if(str.contains("identifier")) {
-                        var currentIdentifier = (self.matchingStrings(input: String(str), regex: pattern).first?[1])!
-                        identifier = currentIdentifier.components(separatedBy: CharacterSet.symbols).joined()
-                    }
-                    if(str.contains("label")) {
-                        var currentLabel = self.cleanString(input: str.replacingOccurrences(of: "label:", with: "").replacingOccurrences(of: "'", with: ""))
-                        label = currentLabel.components(separatedBy: CharacterSet.symbols).joined()
-                    }
-                    if(str.contains("placeholderValue")) {
-                        var currentPlaceHolder = (self.matchingStrings(input: String(str), regex: pattern).first?[1])!
-                        placeHolder = currentPlaceHolder.components(separatedBy: CharacterSet.symbols).joined()
-                    }
-                    if(str.contains("value")) {
-                        var valueTable = str.split(separator: ":")
-                        if(valueTable.count == 2) {
-                            let val = valueTable[1]
-                            var currentValue = val.trimmingCharacters(in: .whitespacesAndNewlines)
-                            value = currentValue.components(separatedBy: CharacterSet.symbols).joined()
+                        if(char == "'") {
+                            stopSplitting = !stopSplitting
+                        }
+                        currentString += String(char)
+                        if((index + 1) == currentLine.1.count) {
+                            splittedLine.append(currentString)
                         }
                     }
+                    index += 1
                 }
                 
-                var enabled = true
-                if(currentLine.1.contains("Disabled")) {
-                    enabled = false
+                if(currentLine.0 == currentLevel && endedIndex >= line) {
+                    var endIn = line + 1
+                    if(endIn < leveledTable.count-1) {
+                        for el in endIn...leveledTable.count-1 {
+                            if(leveledTable[el].0 >= currentLevel+1) {
+                                endIn += 1
+                            } else {
+                                break
+                            }
+                        }
+                    }
+                    
+                    
+                    var attr: [String: String] = [String: String]()
+                    
+                    var label = ""
+                    var placeHolder = ""
+                    var identifier = ""
+                    var value = ""
+                    let pattern = "'(.*?)'"
+                    for str in splittedLine {
+                        if(str.contains("identifier")) {
+                            var currentIdentifier = (self.matchingStrings(input: String(str), regex: pattern).first?[1])!
+                            identifier = currentIdentifier.components(separatedBy: CharacterSet.symbols).joined()
+                        }
+                        if(str.contains("label")) {
+                            var currentLabel = self.cleanString(input: str.replacingOccurrences(of: "label:", with: "").replacingOccurrences(of: "'", with: ""))
+                            label = currentLabel.components(separatedBy: CharacterSet.symbols).joined()
+                        }
+                        if(str.contains("placeholderValue")) {
+                            var currentPlaceHolder = (self.matchingStrings(input: String(str), regex: pattern).first?[1])!
+                            placeHolder = currentPlaceHolder.components(separatedBy: CharacterSet.symbols).joined()
+                        }
+                        if(str.contains("value")) {
+                            var valueTable = str.split(separator: ":")
+                            if(valueTable.count == 2) {
+                                let val = valueTable[1]
+                                var currentValue = val.trimmingCharacters(in: .whitespacesAndNewlines)
+                                value = currentValue.components(separatedBy: CharacterSet.symbols).joined()
+                            }
+                        }
+                    }
+                    
+                    var enabled = true
+                    if(currentLine.1.contains("Disabled")) {
+                        enabled = false
+                    }
+                    
+                    var selected = false
+                    if(currentLine.1.contains("Selected")) {
+                        selected = true
+                    }
+                    
+                    
+                    attr["text"] = label
+                    attr["description"] = placeHolder
+                    attr["checkable"] = String(self.cleanString(input: String(splittedLine[0])) == "checkbox")
+                    attr["enabled"] = String(enabled)
+                    attr["identifier"] = identifier
+                    attr["selected"] = String(selected)
+                    attr["editable"] = String(enabled)
+                    attr["numeric"] = "false"
+                    attr["value"] = value
+                    
+                    let x = Double(self.cleanString(input: String(splittedLine[2]))) as! Double
+                    let y = Double(self.cleanString(input: String(splittedLine[3]))) as! Double
+                    let width = Double(self.cleanString(input: String(splittedLine[4]))) as! Double
+                    let height = Double(self.cleanString(input: String(splittedLine[5]))) as! Double
+                    
+                    tableToReturn.append(UIElement(
+                        id: levelUID,
+                        tag: self.cleanString(input: String(splittedLine[0])),
+                        clickable: true,
+                        x: x * self.ratioWidth,
+                        y: y * self.ratioHeight,
+                        width: width * self.ratioWidth,
+                        height: height * self.ratioHeight,
+                        children: self.getChildrens(currentLevel: currentLevel+1, currentIndex: line+1, endedIndex: endIn, leveledTable: leveledTable),
+                        attributes: attr,
+                        channelY: nil,
+                        channelHeight: nil
+                    ))
+                    
+                    tmpFlatStruct[levelUID] = Frame(label: label, identifier: identifier, placeHolderValue: placeHolder, x: x, y: y, width: width, height: height)
                 }
-                
-                var selected = false
-                if(currentLine.1.contains("Selected")) {
-                    selected = true
-                }
-                
-                
-                attr["text"] = label
-                attr["description"] = placeHolder
-                attr["checkable"] = String(self.cleanString(input: String(splittedLine[0])) == "checkbox")
-                attr["enabled"] = String(enabled)
-                attr["identifier"] = identifier
-                attr["selected"] = String(selected)
-                attr["editable"] = String(enabled)
-                attr["numeric"] = "false"
-                attr["value"] = value
-                
-                let x = Double(self.cleanString(input: String(splittedLine[2]))) as! Double
-                let y = Double(self.cleanString(input: String(splittedLine[3]))) as! Double
-                let width = Double(self.cleanString(input: String(splittedLine[4]))) as! Double
-                let height = Double(self.cleanString(input: String(splittedLine[5]))) as! Double
-            
-                tableToReturn.append(UIElement(
-                    id: levelUID,
-                    tag: self.cleanString(input: String(splittedLine[0])),
-                    clickable: true,
-                    x: x * self.ratioWidth,
-                    y: y * self.ratioHeight,
-                    width: width * self.ratioWidth,
-                    height: height * self.ratioHeight,
-                    children: self.getChildrens(currentLevel: currentLevel+1, currentIndex: line+1, endedIndex: endIn, leveledTable: leveledTable),
-                    attributes: attr,
-                    channelY: nil,
-                    channelHeight: nil
-                ))
-                
-                flatStruct[levelUID] = Frame(label: label, identifier: identifier, placeHolderValue: placeHolder, x: x, y: y, width: width, height: height)
             }
         }
+        
         return tableToReturn
     }
     
