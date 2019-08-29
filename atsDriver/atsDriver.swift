@@ -34,6 +34,7 @@ class atsDriver: XCTestCase {
     var flatStruct: [String: Frame] = [:]
     var tmpFlatStruct: [String: Frame] = [:]
     var thread: Thread! = nil
+    var rootNode: UIElement? = nil
     var udpPort: Int = 47633
     var continueRunningValue = true
     var connectedSockets = [Int32: Socket]()
@@ -105,13 +106,12 @@ class atsDriver: XCTestCase {
         var index: UInt8 = 0
         
         do {
-            let group = DispatchGroup()
-            group.enter()
-            DispatchQueue.global(qos: .default).async {
+            let workItem = DispatchWorkItem {
                 self.refreshView()
-                group.leave()
             }
-            group.wait()
+            
+            DispatchQueue.init(label: "udpQueue").async(execute: workItem)
+            workItem.wait()
             
             var img = self.imgView
             repeat {
@@ -295,27 +295,16 @@ class atsDriver: XCTestCase {
                             break
                         }
                         
-                        let description = self.app.debugDescription
-                        var descriptionTable = description.split(separator: "\n")
+                        var description = self.app.debugDescription
+                        description = description.replacingOccurrences(of: "'\n", with: "'⌘")
+                            .replacingOccurrences(of: "}}\n", with: "}}⌘")
+                            .replacingOccurrences(of: "Disabled\n", with: "Disabled⌘")
+                            .replacingOccurrences(of: "\n    ", with: "⌘    ")
+                            .replacingOccurrences(of: "\n", with: " ")
+                        var descriptionTable = description.split(separator: "⌘")
                         var leveledTable: [(Int,String)] = [(Int,String)]()
                         
-                        //get first line for ratio
-                        let firstLine = String(descriptionTable[3])
-                        var splitFirstLine = firstLine.split(separator: ",")
-                        let w = Double(self.cleanString(input: String(splitFirstLine[4]))) as! Double
-                        let h = Double(self.cleanString(input: String(splitFirstLine[5]))) as! Double
-                        
-                        if(h != self.deviceHeight) {
-                            self.ratioHeight = self.deviceHeight / h
-                        }
-                        
-                        if(w != self.deviceWidth) {
-                            self.ratioWidth = self.deviceWidth / w
-                        }
-                        
-                        
-                        
-                        for index in 3...descriptionTable.count-1 {
+                        for index in 0...descriptionTable.count-3 {
                             //no traitment of line that are not reference composants
                             var currentLine = String(descriptionTable[index])
                             var blankSpacesAtStart = 0
@@ -329,11 +318,10 @@ class atsDriver: XCTestCase {
                             let level = (blankSpacesAtStart / 2) - 1
                             if(level > 0) {
                                 leveledTable.append((level, currentLine))
-                            } else {
-                                break
                             }
                         }
                         
+                        //get first line for ratio
                         var rootLine = leveledTable[0].1.split(separator: ",")
                         let levelUID = UUID().uuidString
                         
@@ -342,21 +330,40 @@ class atsDriver: XCTestCase {
                         var width = Double(self.cleanString(input: String(rootLine[4]))) as! Double
                         var height = Double(self.cleanString(input: String(rootLine[5]))) as! Double
                         
-                        let rootNode = UIElement(
-                            id: levelUID,
-                            tag: "root",
-                            clickable: false,
-                            x: x * self.ratioWidth,
-                            y: y * self.ratioHeight,
-                            width: width * self.ratioWidth,
-                            height: height * self.ratioHeight,
-                            children: self.getChildrens(currentLevel: 1, currentIndex: 0, endedIndex: leveledTable.count-1, leveledTable: leveledTable),
-                            attributes: [:],
-                            channelY: 0,
-                            channelHeight: Double(self.cleanString(input: String(rootLine[5])))
-                        )
-                        self.flatStruct = self.tmpFlatStruct
-                        self.captureStruct = self.convertIntoJSONString(arrayObject: rootNode)
+                        if(height != self.deviceHeight) {
+                            self.ratioHeight = self.deviceHeight / height
+                        }
+                        
+                        if(width != self.deviceWidth) {
+                            self.ratioWidth = self.deviceWidth / width
+                        }
+                        
+                        if(self.rootNode != nil) {
+                            self.captureStruct = self.convertIntoJSONString(arrayObject: self.rootNode!)
+                        } else {
+                            self.captureStruct = "{}"
+                        }
+                        
+                        let workItem = DispatchWorkItem {
+                            let rootNode = UIElement(
+                                id: levelUID,
+                                tag: "root",
+                                clickable: false,
+                                x: x * self.ratioWidth,
+                                y: y * self.ratioHeight,
+                                width: width * self.ratioWidth,
+                                height: height * self.ratioHeight,
+                                children: self.getChildrens(currentLevel: 1, currentIndex: 0, endedIndex: leveledTable.count-1, leveledTable: leveledTable),
+                                attributes: [:],
+                                channelY: 0,
+                                channelHeight: Double(self.cleanString(input: String(rootLine[5])))
+                            )
+                            self.flatStruct = self.tmpFlatStruct
+                            self.captureStruct = self.convertIntoJSONString(arrayObject: rootNode)
+                            self.rootNode = rootNode
+                        }
+                        
+                        DispatchQueue.global(qos: .userInteractive).async(execute: workItem)
                         break
                     case ActionsEnum.ELEMENT.rawValue:
                         if(parameters.count > 1) {
@@ -612,7 +619,7 @@ class atsDriver: XCTestCase {
                             identifier = currentIdentifier.components(separatedBy: CharacterSet.symbols).joined()
                         }
                         if(str.contains("label")) {
-                            var currentLabel = self.cleanString(input: str.replacingOccurrences(of: "label:", with: "").replacingOccurrences(of: "'", with: ""))
+                            var currentLabel = str.replacingOccurrences(of: "label:", with: "").replacingOccurrences(of: "'", with: "").trimmingCharacters(in: NSCharacterSet.whitespaces)
                             label = currentLabel.components(separatedBy: CharacterSet.symbols).joined()
                         }
                         if(str.contains("placeholderValue")) {
@@ -669,7 +676,7 @@ class atsDriver: XCTestCase {
                         channelHeight: nil
                     ))
                     
-                    tmpFlatStruct[levelUID] = Frame(label: label, identifier: identifier, placeHolderValue: placeHolder, x: x, y: y, width: width, height: height)
+                    self.tmpFlatStruct[levelUID] = Frame(label: label, identifier: identifier, placeHolderValue: placeHolder, x: x, y: y, width: width, height: height)
                 }
             }
         }
