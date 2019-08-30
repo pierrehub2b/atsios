@@ -322,7 +322,7 @@ class atsDriver: XCTestCase {
                         }
                         
                         var intervalSinceLastCapture = NSDate().timeIntervalSince1970 - self.lastCapture
-                        if(leveledTable.count == self.flatStruct.count && intervalSinceLastCapture < 5) {
+                        if(leveledTable.count == self.flatStruct.count && intervalSinceLastCapture < 2) {
                             break
                         }
                         
@@ -383,11 +383,12 @@ class atsDriver: XCTestCase {
 
                             if(ActionsEnum.INPUT.rawValue == parameters[1]) {
                                 let text = parameters[2]
-                                self.tapCoordinate(at: flatElement!.x, and: flatElement!.y)
                                 if(text == ActionsEnum.EMPTY.rawValue) {
-                                    if(self.app.menuItems["Select All"].exists) {
-                                        self.app.menuItems["Select All"].tap()
-                                        self.app.typeText(String(XCUIKeyboardKey.delete.rawValue))
+                                    do {
+                                        var deleteKey = self.app.keys.matching(identifier: "delete").firstMatch
+                                        try deleteKey.press(forDuration: 2)
+                                    } catch {
+                                        Print("Cannot find elemen delete")
                                     }
                                 } else {
                                     self.app.typeText(text)
@@ -660,7 +661,12 @@ class atsDriver: XCTestCase {
                         channelHeight: nil
                     ))
                     
-                    self.tmpFlatStruct[levelUID] = Frame(label: label, identifier: identifier, placeHolderValue: placeHolder, x: x, y: y, width: width, height: height)
+                    do {
+                        try self.tmpFlatStruct[levelUID] = Frame(label: label, identifier: identifier, placeHolderValue: placeHolder, x: x, y: y, width: width, height: height)
+                    } catch {
+                        print("Error when addinf element to flat structure")
+                    }
+                    
                 }
             }
         }
