@@ -24,8 +24,8 @@ import Socket
 
 class atsDriver: XCTestCase {
     
-    let backgroundThread = DispatchQueue(label: "udpQueue", qos: .background)
-    
+    let udpThread = DispatchQueue(label: "udpQueue", qos: .userInitiated)
+    var domThread = DispatchQueue(label: "domQueue", qos: .userInitiated)
     var port = 8080
     var app: XCUIApplication!
     var currentAppIdentifier: String = ""
@@ -39,6 +39,7 @@ class atsDriver: XCTestCase {
     var connectedSockets = [Int32: Socket]()
     var imgView: Data? = nil
     var lastCapture: TimeInterval = NSDate().timeIntervalSince1970
+    var leveledTableCount = 0
     
     let osVersion = UIDevice.current.systemVersion
     let model = UIDevice.current.name
@@ -65,7 +66,7 @@ class atsDriver: XCTestCase {
         super.setUp()
         
         
-        backgroundThread.async {
+        udpThread.async {
             self.udpStart()
         }
         
@@ -110,25 +111,27 @@ class atsDriver: XCTestCase {
                 self.refreshView()
             }
             
-            DispatchQueue.init(label: "udpQueue").async(execute: workItem)
+            DispatchQueue.init(label: "getImg").async(execute: workItem)
             workItem.wait()
             
             var img = self.imgView
-            repeat {
-                let thisChunkSize = ((img!.count - offset) > bufferSize) ? bufferSize : (img!.count - offset);
-                var chunk = img!.subdata(in: offset..<offset + thisChunkSize)
-                offset += thisChunkSize
-                let uint32Offset = UInt32(offset - thisChunkSize)
-                let uint32RemainingData = UInt32(img!.count - offset)
-                
-                var offSetTable = self.toByteArrary(value: uint32Offset)
-                var remainingDataTable = self.toByteArrary(value: uint32RemainingData)
-                
-                chunk.insert(contentsOf: offSetTable + remainingDataTable, at: 0)
-                
-                try socket.write(from: chunk, to: currentConnection.address!)
-                
-            } while (offset < img!.count);
+            if(img != nil) {
+                repeat {
+                    let thisChunkSize = ((img!.count - offset) > bufferSize) ? bufferSize : (img!.count - offset);
+                    var chunk = img!.subdata(in: offset..<offset + thisChunkSize)
+                    offset += thisChunkSize
+                    let uint32Offset = UInt32(offset - thisChunkSize)
+                    let uint32RemainingData = UInt32(img!.count - offset)
+                    
+                    var offSetTable = self.toByteArrary(value: uint32Offset)
+                    var remainingDataTable = self.toByteArrary(value: uint32RemainingData)
+                    
+                    chunk.insert(contentsOf: offSetTable + remainingDataTable, at: 0)
+                    
+                    try socket.write(from: chunk, to: currentConnection.address!)
+                    
+                } while (offset < img!.count);
+            }
         }
         catch let error {
             guard let socketError = error as? Socket.Error else {
@@ -319,8 +322,18 @@ class atsDriver: XCTestCase {
                             }
                         }
                         
+                        if(self.leveledTableCount == 0) {
+                            self.leveledTableCount = leveledTable.count
+                        } else {
+                            if(self.leveledTableCount != leveledTable.count) {
+                                self.domThread = DispatchQueue(label: "domQueue", qos: .userInitiated)
+                            }
+                        }
                         
-                        
+                        var intervalSinceLastCapture = NSDate().timeIntervalSince1970 - self.lastCapture
+                        if(leveledTable.count == self.flatStruct.count && intervalSinceLastCapture < 2) {
+                            break
+                        }
                         
                         //get first line for ratio
                         var rootLine = leveledTable[0].1.split(separator: ",")
@@ -344,7 +357,6 @@ class atsDriver: XCTestCase {
                         } else {
                             self.captureStruct = "{}"
                         }
-                        
                         let workItem = DispatchWorkItem {
                             let rootNode = UIElement(
                                 id: levelUID,
@@ -366,7 +378,7 @@ class atsDriver: XCTestCase {
                             self.lastCapture = NSDate().timeIntervalSince1970
                         }
                         
-                        DispatchQueue.global(qos: .userInteractive).async(execute: workItem)
+                        self.domThread.async(execute: workItem)
                         break
                     case ActionsEnum.ELEMENT.rawValue:
                         if(parameters.count > 1) {
