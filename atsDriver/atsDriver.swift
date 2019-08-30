@@ -379,6 +379,7 @@ class atsDriver: XCTestCase {
                         }
                         
                         self.domThread.async(execute: workItem)
+                        workItem.wait()
                         break
                     case ActionsEnum.ELEMENT.rawValue:
                         if(parameters.count > 1) {
