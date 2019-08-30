@@ -39,6 +39,7 @@ class atsDriver: XCTestCase {
     var continueRunningValue = true
     var connectedSockets = [Int32: Socket]()
     var imgView: Data? = nil
+    var lastCapture: TimeInterval = NSDate().timeIntervalSince1970
     
     let osVersion = UIDevice.current.systemVersion
     let model = UIDevice.current.name
@@ -218,7 +219,6 @@ class atsDriver: XCTestCase {
                                 let screenNativeBounds = XCUIScreen.main.screenshot().image
                                 self.deviceWidth = Double(screenNativeBounds.size.width)
                                 self.deviceHeight = Double(screenNativeBounds.size.height)
-                                
                                 if(self.deviceHeight > self.maxHeight) {
                                     self.ratioScreen = self.maxHeight / self.deviceHeight
                                     self.deviceWidth = self.deviceWidth * self.ratioScreen
@@ -321,6 +321,12 @@ class atsDriver: XCTestCase {
                             }
                         }
                         
+                        var intervalSinceLastCapture = NSDate().timeIntervalSince1970 - self.lastCapture
+                        if(leveledTable.count == self.flatStruct.count && intervalSinceLastCapture < 5) {
+                            break
+                        }
+                        
+                        
                         //get first line for ratio
                         var rootLine = leveledTable[0].1.split(separator: ",")
                         let levelUID = UUID().uuidString
@@ -361,6 +367,7 @@ class atsDriver: XCTestCase {
                             self.flatStruct = self.tmpFlatStruct
                             self.captureStruct = self.convertIntoJSONString(arrayObject: rootNode)
                             self.rootNode = rootNode
+                            self.lastCapture = NSDate().timeIntervalSince1970
                         }
                         
                         DispatchQueue.global(qos: .userInteractive).async(execute: workItem)
@@ -373,81 +380,58 @@ class atsDriver: XCTestCase {
                                 self.resultElement["message"] = "missing element"
                                 break
                             }
-                            var element: XCUIElement? = nil
-                            if(flatElement?.label != "") {
-                                element = self.retrieveElement(parameter: "label", field: flatElement!.label)
-                            } else if(flatElement?.identifier != "") {
-                                element = self.retrieveElement(parameter: "identifier", field: flatElement!.identifier)
-                            } else {
-                                element = self.retrieveElement(parameter: "placeholderValue", field: flatElement!.placeHolderValue)
-                            }
-                            if(element != nil && !element!.isHittable) {
-                                element = nil
-                                self.resultElement["status"] = -22
-                                self.resultElement["message"] = "element not in the screen"
-                            }
-                            if(element != nil) {
-                                if(ActionsEnum.INPUT.rawValue == parameters[1]) {
-                                    let text = parameters[2]
-                                    if(element!.elementType.rawValue == 49 || element!.elementType.rawValue == 50 || element!.elementType.rawValue == 45) {
-                                        element?.tap()
-                                        if(text == ActionsEnum.EMPTY.rawValue) {
-                                            let deleteString = String(repeating: XCUIKeyboardKey.delete.rawValue, count: (element?.value as? String)?.count ?? 0)
-                                            element?.typeText(deleteString)
-                                            self.resultElement["status"] = 0
-                                            self.resultElement["message"] = "element clear text"
-                                        } else {
-                                            element?.typeText(text)
-                                            self.resultElement["status"] = 0
-                                            self.resultElement["message"] = "element tap text: " + text
-                                        }
-                                    } else {
-                                        element?.tap()
-                                        self.resultElement["status"] = 0
-                                        self.resultElement["message"] = "not a text input, just tap"
+
+                            if(ActionsEnum.INPUT.rawValue == parameters[1]) {
+                                let text = parameters[2]
+                                self.tapCoordinate(at: flatElement!.x, and: flatElement!.y)
+                                if(text == ActionsEnum.EMPTY.rawValue) {
+                                    if(self.app.menuItems["Select All"].exists) {
+                                        self.app.menuItems["Select All"].tap()
+                                        self.app.typeText(String(XCUIKeyboardKey.delete.rawValue))
                                     }
                                 } else {
-                                    var offSetX = 0
-                                    var offSetY = 0
-                                    if(parameters.count > 3) {
-                                        offSetX = Int(parameters[2])!
-                                        offSetY = Int(parameters[3])!
-                                    }
-                                    
-                                    let calculateX = Double(element?.frame.minX ?? 0) + Double(offSetX)
-                                    let calculateY = Double(element?.frame.minY ?? 0) + Double(offSetY)
-                                    
-                                    if(ActionsEnum.TAP.rawValue == parameters[1]) {
-                                        self.tapCoordinate(at: calculateX, and: calculateY)
-                                        self.resultElement["status"] = 0
-                                        self.resultElement["message"] = "tap on element"
-                                    } else {
-                                        if(ActionsEnum.SWIPE.rawValue == parameters[1]) {
-                                            let directionX = Double(parameters[4]) ?? 0.0
-                                            let directionY = Double(parameters[5]) ?? 0.0
-                                            if(directionX > 0.0) {
-                                                element?.swipeRight()
-                                            }
-                                            if(directionX < 0.0) {
-                                                element?.swipeLeft()
-                                            }
-                                            if(directionY > 0.0) {
-                                                element?.swipeUp()
-                                            }
-                                            if(directionY < 0.0) {
-                                                element?.swipeDown()
-                                            }
-                                            self.resultElement["status"] = 0
-                                            self.resultElement["message"] = "swipe element"
-                                        }
-                                    }
+                                    self.app.typeText(text)
+                                    self.resultElement["status"] = 0
+                                    self.resultElement["message"] = "element tap text: " + text
                                 }
                             } else {
-                                self.resultElement["status"] = -21
-                                self.resultElement["message"] = "missing element"
+                                var offSetX = 0
+                                var offSetY = 0
+                                if(parameters.count > 3) {
+                                    offSetX = Int(parameters[2])!
+                                    offSetY = Int(parameters[3])!
+                                }
+                                
+                                let calculateX = Double(flatElement!.x ) + Double(offSetX)
+                                let calculateY = Double(flatElement!.y ) + Double(offSetY)
+                                
+                                if(ActionsEnum.TAP.rawValue == parameters[1]) {
+                                    self.tapCoordinate(at: calculateX, and: calculateY)
+                                    self.resultElement["status"] = 0
+                                    self.resultElement["message"] = "tap on element"
+                                } else {
+                                    if(ActionsEnum.SWIPE.rawValue == parameters[1]) {
+                                        let directionX = Double(parameters[4]) ?? 0.0
+                                        let directionY = Double(parameters[5]) ?? 0.0
+                                        if(directionX > 0.0) {
+                                            self.app.swipeRight()
+                                        }
+                                        if(directionX < 0.0) {
+                                            self.app.swipeLeft()
+                                        }
+                                        if(directionY > 0.0) {
+                                            self.app.swipeUp()
+                                        }
+                                        if(directionY < 0.0) {
+                                            self.app.swipeDown()
+                                        }
+                                        self.resultElement["status"] = 0
+                                        self.resultElement["message"] = "swipe element"
+                                    }
+                                }
                             }
-                        }  else {
-                            self.resultElement["message"] = "missing element action"
+                        } else {
+                            self.resultElement["message"] = "missing paramters action"
                             self.resultElement["status"] = -41
                         }
                         break
