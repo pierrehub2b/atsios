@@ -87,9 +87,9 @@ class atsDriver: XCTestCase {
         do {
             var data = Data()
             let socket = try Socket.create(family: .inet, type: .datagram, proto: .udp)
-            var currentConnection = try socket.listen(forMessage: &data, on: self.udpPort)
             
             repeat {
+                let currentConnection = try socket.listen(forMessage: &data, on: self.udpPort)
                 self.addNewConnection(socket: socket, currentConnection: currentConnection)
             } while true
         } catch let error {
@@ -379,6 +379,7 @@ class atsDriver: XCTestCase {
                         }
                         
                         self.domThread.async(execute: workItem)
+                        workItem.wait()
                         break
                     case ActionsEnum.ELEMENT.rawValue:
                         if(parameters.count > 1) {
