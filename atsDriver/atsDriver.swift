@@ -388,7 +388,7 @@ class atsDriver: XCTestCase {
                                         var deleteKey = self.app.keys.matching(identifier: "delete").firstMatch
                                         try deleteKey.press(forDuration: 2)
                                     } catch {
-                                        Print("Cannot find elemen delete")
+                                        print("Cannot find elemen delete")
                                     }
                                 } else {
                                     self.app.typeText(text)
