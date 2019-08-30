@@ -32,7 +32,6 @@ class atsDriver: XCTestCase {
     var resultElement: [String: Any] = [:]
     var captureStruct: String = ""
     var flatStruct: [String: Frame] = [:]
-    var tmpFlatStruct: [String: Frame] = [:]
     var thread: Thread! = nil
     var rootNode: UIElement? = nil
     var udpPort: Int = 47633
@@ -288,7 +287,6 @@ class atsDriver: XCTestCase {
                         }
                         break
                     case ActionsEnum.CAPTURE.rawValue:
-                        self.tmpFlatStruct = [:]
                         if(self.app == nil) {
                             self.resultElement["message"] = "no app has been launched"
                             self.resultElement["status"] = -99
@@ -321,10 +319,7 @@ class atsDriver: XCTestCase {
                             }
                         }
                         
-                        var intervalSinceLastCapture = NSDate().timeIntervalSince1970 - self.lastCapture
-                        if(leveledTable.count == self.flatStruct.count && intervalSinceLastCapture < 0.5) {
-                            break
-                        }
+                        
                         
                         
                         //get first line for ratio
@@ -364,7 +359,8 @@ class atsDriver: XCTestCase {
                                 channelY: 0,
                                 channelHeight: Double(self.cleanString(input: String(rootLine[5])))
                             )
-                            self.flatStruct = self.tmpFlatStruct
+                            
+                            self.flatStruct = self.getFlatStruct(rootNode: rootNode)
                             self.captureStruct = self.convertIntoJSONString(arrayObject: rootNode)
                             self.rootNode = rootNode
                             self.lastCapture = NSDate().timeIntervalSince1970
@@ -542,6 +538,18 @@ class atsDriver: XCTestCase {
         return modifiedString.components(separatedBy: stop)
     }
     
+    func getFlatStruct(rootNode: UIElement) -> [String: Frame] {
+        var frame = Frame(x: rootNode.x, y: rootNode.y, width: rootNode.width, height: rootNode.height)
+        var currentFlatStruct: [String:Frame] = [:]
+        currentFlatStruct[rootNode.id] = frame
+        for child in rootNode.children! {
+            var c = self.getFlatStruct(rootNode: child)
+            currentFlatStruct = currentFlatStruct.merging(c)
+            { (current, _) in current }
+        }
+        return currentFlatStruct
+    }
+    
     func getChildrens(currentLevel: Int, currentIndex: Int, endedIndex: Int, leveledTable: [(Int,String)]) -> [UIElement] {
         var tableToReturn: [UIElement] = [UIElement]()
         if(currentIndex < leveledTable.count-1) {
@@ -660,13 +668,6 @@ class atsDriver: XCTestCase {
                         channelY: nil,
                         channelHeight: nil
                     ))
-                    
-                    do {
-                        try self.tmpFlatStruct[levelUID] = Frame(label: label, identifier: identifier, placeHolderValue: placeHolder, x: x, y: y, width: width, height: height)
-                    } catch {
-                        print("Error when addinf element to flat structure")
-                    }
-                    
                 }
             }
         }

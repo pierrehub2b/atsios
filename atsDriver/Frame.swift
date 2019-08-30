@@ -9,9 +9,6 @@
 import Foundation
 
 struct Frame {
-    let label: String
-    let identifier: String
-    let placeHolderValue: String
     let x: Double
     let y: Double
     let width: Double
