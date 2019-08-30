@@ -322,13 +322,13 @@ class atsDriver: XCTestCase {
                             }
                         }
                         
-                        if(self.leveledTableCount == 0) {
-                            self.leveledTableCount = leveledTable.count
-                        } else {
-                            if(self.leveledTableCount != leveledTable.count) {
-                                self.domThread = DispatchQueue(label: "domQueue", qos: .userInitiated)
-                            }
-                        }
+//                        if(self.leveledTableCount == 0) {
+//                            self.leveledTableCount = leveledTable.count
+//                        } else {
+//                            if(self.leveledTableCount != leveledTable.count) {
+//                                self.domThread = DispatchQueue(label: "domQueue", qos: .userInitiated)
+//                            }
+//                        }
                         
                         var intervalSinceLastCapture = NSDate().timeIntervalSince1970 - self.lastCapture
                         if(leveledTable.count == self.flatStruct.count && intervalSinceLastCapture < 2) {
