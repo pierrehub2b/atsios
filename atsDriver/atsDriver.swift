@@ -322,7 +322,7 @@ class atsDriver: XCTestCase {
                         }
                         
                         var intervalSinceLastCapture = NSDate().timeIntervalSince1970 - self.lastCapture
-                        if(leveledTable.count == self.flatStruct.count && intervalSinceLastCapture < 2) {
+                        if(leveledTable.count == self.flatStruct.count && intervalSinceLastCapture < 0.5) {
                             break
                         }
                         
