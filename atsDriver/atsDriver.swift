@@ -41,6 +41,8 @@ class atsDriver: XCTestCase {
     var lastCapture: TimeInterval = NSDate().timeIntervalSince1970
     var leveledTableCount = 0
     
+    var cachedDescription: String = ""
+    
     let osVersion = UIDevice.current.systemVersion
     let model = UIDevice.current.name
     let uid = UIDevice.current.identifierForVendor!.uuidString
@@ -50,18 +52,18 @@ class atsDriver: XCTestCase {
     var ratioScreen = 1.0
     var ratioWidth = 1.0
     var ratioHeight = 1.0
-
+    
     var continueExecution = true
     
     var applicationControls =
         [
-         "any","other","application","group","window","sheet","drawer","alert","dialog","button","radioButton","radioGroup","checkbox","disclosureTriangle","popUpButton","comboBox","menuButton","toolbarButton","popOver",
-         "keyboard","key","navigationBar","tabBar","tabGroup","toolBar","statusBar","table","tableRow","tableColumn","outline","outlineRow","browser","collectionView","slider","pageIndicator","progressIndicator",
-         "activityIndicator","segmentedControl","picker","pickerWheel","switch","toogle","link","image","icon","searchField","scrollView","scrollBar","staticText","textField","secureTextField","datePicker","textView",
-         "menu","menuItem","menuBar","menuBarItem","map","webView","incrementArrow","decrementArrow","timeline","ratingIndicator","valueIndicator","splitGroup","splitter","relevanceIndicator","colorWell","helpTag","matte",
-         "dockItem","ruler","rulerMarker","grid","levelIndicator","cell","layoutArea","layoutItem","handle","stepper","tab","touchBar","statusItem"
-        ]
-
+            "any","other","application","group","window","sheet","drawer","alert","dialog","button","radioButton","radioGroup","checkbox","disclosureTriangle","popUpButton","comboBox","menuButton","toolbarButton","popOver",
+            "keyboard","key","navigationBar","tabBar","tabGroup","toolBar","statusBar","table","tableRow","tableColumn","outline","outlineRow","browser","collectionView","slider","pageIndicator","progressIndicator",
+            "activityIndicator","segmentedControl","picker","pickerWheel","switch","toogle","link","image","icon","searchField","scrollView","scrollBar","staticText","textField","secureTextField","datePicker","textView",
+            "menu","menuItem","menuBar","menuBarItem","map","webView","incrementArrow","decrementArrow","timeline","ratingIndicator","valueIndicator","splitGroup","splitter","relevanceIndicator","colorWell","helpTag","matte",
+            "dockItem","ruler","rulerMarker","grid","levelIndicator","cell","layoutArea","layoutItem","handle","stepper","tab","touchBar","statusItem"
+    ]
+    
     override func setUp() {
         super.setUp()
         
@@ -83,7 +85,7 @@ class atsDriver: XCTestCase {
                 break;
             }
         }
-
+        
         do {
             var data = Data()
             let socket = try Socket.create(family: .inet, type: .datagram, proto: .udp)
@@ -142,7 +144,7 @@ class atsDriver: XCTestCase {
                 print("Error reported by connection at \(socket.remoteHostname):\(socket.remotePort):\n \(socketError.description)")
             }
         }
-
+        
     }
     
     func refreshView() {
@@ -214,89 +216,93 @@ class atsDriver: XCTestCase {
             } else {
                 switch action {
                 case ActionsEnum.DRIVER.rawValue:
-                        if(parameters.count > 0) {
-                            if(ActionsEnum.START.rawValue == parameters[0]) {
-                                self.continueExecution = true
-                                
-                                let screenNativeBounds = XCUIScreen.main.screenshot().image
-                                self.deviceWidth = Double(screenNativeBounds.size.width)
-                                self.deviceHeight = Double(screenNativeBounds.size.height)
-                                if(self.deviceHeight > self.maxHeight) {
-                                    self.ratioScreen = self.maxHeight / self.deviceHeight
-                                    self.deviceWidth = self.deviceWidth * self.ratioScreen
-                                    self.deviceHeight = self.deviceHeight * self.ratioScreen
-                                }
-                                
-                                self.driverInfoBase()
-                                self.resultElement["status"] = 0
-                                self.resultElement["screenCapturePort"] = self.udpPort
-                            } else {
-                                if(ActionsEnum.STOP.rawValue == parameters[0]) {
-                                    if(self.app != nil){
-                                        self.app.terminate()
-                                        self.continueExecution = false
-                                        XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
-                                        self.resultElement["status"] = 0
-                                        self.resultElement["message"] = "stop ats driver"
-                                    }
-                                } else {
-                                    if(ActionsEnum.QUIT.rawValue == parameters[0]) {
-                                        //self.tearDown()
-                                        self.app.terminate()
-                                        self.continueExecution = false
-                                        XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
-                                        self.resultElement["status"] = 0
-                                        self.resultElement["message"] = "close ats driver"
-                                    } else if(ActionsEnum.INFO.rawValue == parameters[0]) {
-                                        self.resultElement["status"] = 0
-                                        self.resultElement["info"] = self.getAppInfo()
-                                    } else {
-                                        self.resultElement["message"] = "missiing driver action type " + parameters[0]
-                                        self.resultElement["status"] = -42
-                                    }
-                                }
+                    if(parameters.count > 0) {
+                        if(ActionsEnum.START.rawValue == parameters[0]) {
+                            self.continueExecution = true
+                            
+                            let screenNativeBounds = XCUIScreen.main.screenshot().image
+                            self.deviceWidth = Double(screenNativeBounds.size.width)
+                            self.deviceHeight = Double(screenNativeBounds.size.height)
+                            if(self.deviceHeight > self.maxHeight) {
+                                self.ratioScreen = self.maxHeight / self.deviceHeight
+                                self.deviceWidth = self.deviceWidth * self.ratioScreen
+                                self.deviceHeight = self.deviceHeight * self.ratioScreen
                             }
+                            
+                            self.driverInfoBase()
+                            self.resultElement["status"] = 0
+                            self.resultElement["screenCapturePort"] = self.udpPort
                         } else {
-                            self.resultElement["message"] = "missing driver action"
-                            self.resultElement["status"] = -41
-                        }
-                        break
-                    case ActionsEnum.BUTTON.rawValue:
-                        if(parameters.count > 0) {
-                            if(DeviceButtons.HOME.rawValue == parameters[0]) {
-                                XCUIDevice.shared.press(.home)
-                                self.resultElement["status"] = 0
-                                self.resultElement["message"] = "press home button"
+                            if(ActionsEnum.STOP.rawValue == parameters[0]) {
+                                if(self.app != nil){
+                                    self.app.terminate()
+                                    self.continueExecution = false
+                                    XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
+                                    self.resultElement["status"] = 0
+                                    self.resultElement["message"] = "stop ats driver"
+                                }
                             } else {
-                                if(DeviceButtons.ORIENTATION.rawValue == parameters[0]) {
-                                    if(XCUIDevice.shared.orientation == .landscapeLeft) {
-                                        XCUIDevice.shared.orientation = .portrait
-                                        self.resultElement["status"] = 0
-                                        self.resultElement["message"] = "orientation to portrait mode"
-                                    } else {
-                                        XCUIDevice.shared.orientation = .landscapeLeft
-                                        self.resultElement["status"] = 0
-                                        self.resultElement["message"] = "orientation to landscape mode"
-                                    }
+                                if(ActionsEnum.QUIT.rawValue == parameters[0]) {
+                                    //self.tearDown()
+                                    self.app.terminate()
+                                    self.continueExecution = false
+                                    XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
+                                    self.resultElement["status"] = 0
+                                    self.resultElement["message"] = "close ats driver"
+                                } else if(ActionsEnum.INFO.rawValue == parameters[0]) {
+                                    self.resultElement["status"] = 0
+                                    self.resultElement["info"] = self.getAppInfo()
                                 } else {
-                                    self.resultElement["message"] = "unknow button " + parameters[0]
+                                    self.resultElement["message"] = "missiing driver action type " + parameters[0]
                                     self.resultElement["status"] = -42
                                 }
                             }
-                            
-                        } else {
-                            self.resultElement["message"] = "missing button action"
-                            self.resultElement["status"] = -41
                         }
-                        break
-                    case ActionsEnum.CAPTURE.rawValue:
-                        if(self.app == nil) {
-                            self.resultElement["message"] = "no app has been launched"
-                            self.resultElement["status"] = -99
-                            break
+                    } else {
+                        self.resultElement["message"] = "missing driver action"
+                        self.resultElement["status"] = -41
+                    }
+                    break
+                case ActionsEnum.BUTTON.rawValue:
+                    if(parameters.count > 0) {
+                        if(DeviceButtons.HOME.rawValue == parameters[0]) {
+                            XCUIDevice.shared.press(.home)
+                            self.resultElement["status"] = 0
+                            self.resultElement["message"] = "press home button"
+                        } else {
+                            if(DeviceButtons.ORIENTATION.rawValue == parameters[0]) {
+                                if(XCUIDevice.shared.orientation == .landscapeLeft) {
+                                    XCUIDevice.shared.orientation = .portrait
+                                    self.resultElement["status"] = 0
+                                    self.resultElement["message"] = "orientation to portrait mode"
+                                } else {
+                                    XCUIDevice.shared.orientation = .landscapeLeft
+                                    self.resultElement["status"] = 0
+                                    self.resultElement["message"] = "orientation to landscape mode"
+                                }
+                            } else {
+                                self.resultElement["message"] = "unknow button " + parameters[0]
+                                self.resultElement["status"] = -42
+                            }
                         }
                         
-                        var description = self.app.debugDescription
+                    } else {
+                        self.resultElement["message"] = "missing button action"
+                        self.resultElement["status"] = -41
+                    }
+                    break
+                case ActionsEnum.CAPTURE.rawValue:
+                    if(self.app == nil) {
+                        self.resultElement["message"] = "no app has been launched"
+                        self.resultElement["status"] = -99
+                        break
+                    }
+                    
+                    var description = self.app.debugDescription
+                    
+                    if(self.cachedDescription != description){
+                        self.cachedDescription = description;
+                        
                         description = description.replacingOccurrences(of: "'\n", with: "'⌘")
                             .replacingOccurrences(of: "}}\n", with: "}}⌘")
                             .replacingOccurrences(of: "Disabled\n", with: "Disabled⌘")
@@ -322,13 +328,13 @@ class atsDriver: XCTestCase {
                             }
                         }
                         
-//                        if(self.leveledTableCount == 0) {
-//                            self.leveledTableCount = leveledTable.count
-//                        } else {
-//                            if(self.leveledTableCount != leveledTable.count) {
-//                                self.domThread = DispatchQueue(label: "domQueue", qos: .userInitiated)
-//                            }
-//                        }
+                        //                        if(self.leveledTableCount == 0) {
+                        //                            self.leveledTableCount = leveledTable.count
+                        //                        } else {
+                        //                            if(self.leveledTableCount != leveledTable.count) {
+                        //                                self.domThread = DispatchQueue(label: "domQueue", qos: .userInitiated)
+                        //                            }
+                        //                        }
                         
                         var intervalSinceLastCapture = NSDate().timeIntervalSince1970 - self.lastCapture
                         if(leveledTable.count == self.flatStruct.count && intervalSinceLastCapture < 2) {
@@ -377,125 +383,127 @@ class atsDriver: XCTestCase {
                             self.rootNode = rootNode
                             self.lastCapture = NSDate().timeIntervalSince1970
                         }
-                        
                         self.domThread.async(execute: workItem)
                         workItem.wait()
-                        break
-                    case ActionsEnum.ELEMENT.rawValue:
-                        if(parameters.count > 1) {
-                            let flatElement = self.flatStruct[parameters[0]]
-                            if(flatElement == nil) {
-                                self.resultElement["status"] = -21
-                                self.resultElement["message"] = "missing element"
-                                break
-                            }
-
-                            if(ActionsEnum.INPUT.rawValue == parameters[1]) {
-                                let text = parameters[2]
-                                if(text == ActionsEnum.EMPTY.rawValue) {
-                                    do {
-                                        var deleteKey = self.app.keys.matching(identifier: "delete").firstMatch
-                                        try deleteKey.press(forDuration: 2)
-                                    } catch {
-                                        print("Cannot find elemen delete")
-                                    }
-                                } else {
-                                    self.app.typeText(text)
-                                    self.resultElement["status"] = 0
-                                    self.resultElement["message"] = "element tap text: " + text
+                        
+                    }
+                    
+                    break
+                case ActionsEnum.ELEMENT.rawValue:
+                    if(parameters.count > 1) {
+                        let flatElement = self.flatStruct[parameters[0]]
+                        if(flatElement == nil) {
+                            self.resultElement["status"] = -21
+                            self.resultElement["message"] = "missing element"
+                            break
+                        }
+                        
+                        if(ActionsEnum.INPUT.rawValue == parameters[1]) {
+                            let text = parameters[2]
+                            if(text == ActionsEnum.EMPTY.rawValue) {
+                                do {
+                                    var deleteKey = self.app.keys.matching(identifier: "delete").firstMatch
+                                    try deleteKey.press(forDuration: 2)
+                                } catch {
+                                    print("Cannot find elemen delete")
                                 }
                             } else {
-                                var offSetX = 0
-                                var offSetY = 0
-                                if(parameters.count > 3) {
-                                    offSetX = Int(parameters[2])!
-                                    offSetY = Int(parameters[3])!
-                                }
-                                
-                                let calculateX = Double(flatElement!.x ) + Double(offSetX)
-                                let calculateY = Double(flatElement!.y ) + Double(offSetY)
-                                
-                                if(ActionsEnum.TAP.rawValue == parameters[1]) {
-                                    self.tapCoordinate(at: calculateX, and: calculateY)
-                                    self.resultElement["status"] = 0
-                                    self.resultElement["message"] = "tap on element"
-                                } else {
-                                    if(ActionsEnum.SWIPE.rawValue == parameters[1]) {
-                                        let directionX = Double(parameters[4]) ?? 0.0
-                                        let directionY = Double(parameters[5]) ?? 0.0
-                                        if(directionX > 0.0) {
-                                            self.app.swipeRight()
-                                        }
-                                        if(directionX < 0.0) {
-                                            self.app.swipeLeft()
-                                        }
-                                        if(directionY > 0.0) {
-                                            self.app.swipeUp()
-                                        }
-                                        if(directionY < 0.0) {
-                                            self.app.swipeDown()
-                                        }
-                                        self.resultElement["status"] = 0
-                                        self.resultElement["message"] = "swipe element"
-                                    }
-                                }
+                                self.app.typeText(text)
+                                self.resultElement["status"] = 0
+                                self.resultElement["message"] = "element tap text: " + text
                             }
                         } else {
-                            self.resultElement["message"] = "missing paramters action"
-                            self.resultElement["status"] = -41
-                        }
-                        break
-                    case ActionsEnum.APP.rawValue:
-                        if(parameters.count > 1) {
-                            if(ActionsEnum.START.rawValue == parameters[0]) {
-                                self.app = XCUIApplication(bundleIdentifier: parameters[1])
-                                self.app.launch();
-                                self.resultElement["message"] = "start app " + parameters[1]
-                                self.resultElement["status"] = 0
-                                self.resultElement["label"] = self.app.label
-                                self.resultElement["icon"] = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAC4jAAAuIwF4pT92AAAAB3RJTUUH4wgNCzQS2tg9zgAAABl0RVh0Q29tbWVudABDcmVhdGVkIHdpdGggR0lNUFeBDhcAAAAMSURBVAjXY2DY/QYAAmYBqC0q4zEAAAAASUVORK5CYII="
-                                self.resultElement["version"] = "0.0.0"
-                            } else {
-                                if(ActionsEnum.SWITCH.rawValue == parameters[0]) {
-                                    self.app = XCUIApplication(bundleIdentifier: parameters[1])
-                                    self.app.activate()
-                                    self.resultElement["message"] = "switch app " + parameters[1]
-                                    self.resultElement["status"] = 0
-                                } else {
-                                    if(ActionsEnum.STOP.rawValue == parameters[0]) {
-                                        self.app = XCUIApplication(bundleIdentifier: parameters[1])
-                                        self.app.terminate()
-                                        self.resultElement["message"] = "stop app " + parameters[1]
-                                        self.resultElement["status"] = 0
-                                    } else {
-                                        self.resultElement["message"] = "missiing app action type " + parameters[0]
-                                        self.resultElement["status"] = -42
-                                    }
-                                }
-                                
+                            var offSetX = 0
+                            var offSetY = 0
+                            if(parameters.count > 3) {
+                                offSetX = Int(parameters[2])!
+                                offSetY = Int(parameters[3])!
                             }
                             
-                        } else {
-                            self.resultElement["message"] = "missing app action"
-                            self.resultElement["status"] = -41
+                            let calculateX = Double(flatElement!.x ) + Double(offSetX)
+                            let calculateY = Double(flatElement!.y ) + Double(offSetY)
+                            
+                            if(ActionsEnum.TAP.rawValue == parameters[1]) {
+                                self.tapCoordinate(at: calculateX, and: calculateY)
+                                self.resultElement["status"] = 0
+                                self.resultElement["message"] = "tap on element"
+                            } else {
+                                if(ActionsEnum.SWIPE.rawValue == parameters[1]) {
+                                    let directionX = Double(parameters[4]) ?? 0.0
+                                    let directionY = Double(parameters[5]) ?? 0.0
+                                    if(directionX > 0.0) {
+                                        self.app.swipeRight()
+                                    }
+                                    if(directionX < 0.0) {
+                                        self.app.swipeLeft()
+                                    }
+                                    if(directionY > 0.0) {
+                                        self.app.swipeUp()
+                                    }
+                                    if(directionY < 0.0) {
+                                        self.app.swipeDown()
+                                    }
+                                    self.resultElement["status"] = 0
+                                    self.resultElement["message"] = "swipe element"
+                                }
+                            }
                         }
-                        break
-                    case ActionsEnum.INFO.rawValue:
-                        self.driverInfoBase()
-                        self.resultElement["message"] = "device capabilities"
-                        self.resultElement["status"] = 0
-                        self.resultElement["id"] = self.uid
-                        self.resultElement["model"] = self.model
-                        self.resultElement["manufacturer"] = "Apple"
-                        self.resultElement["brand"] = "Apple"
-                        self.resultElement["version"] = self.osVersion
-                        self.resultElement["bluetoothName"] = ""
-                        break
-                    default:
-                        self.resultElement["status"] = -12
-                        self.resultElement["message"] = "unknow command " + action
-                        break
+                    } else {
+                        self.resultElement["message"] = "missing paramters action"
+                        self.resultElement["status"] = -41
                     }
+                    break
+                case ActionsEnum.APP.rawValue:
+                    if(parameters.count > 1) {
+                        if(ActionsEnum.START.rawValue == parameters[0]) {
+                            self.app = XCUIApplication(bundleIdentifier: parameters[1])
+                            self.app.launch();
+                            self.resultElement["message"] = "start app " + parameters[1]
+                            self.resultElement["status"] = 0
+                            self.resultElement["label"] = self.app.label
+                            self.resultElement["icon"] = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAC4jAAAuIwF4pT92AAAAB3RJTUUH4wgNCzQS2tg9zgAAABl0RVh0Q29tbWVudABDcmVhdGVkIHdpdGggR0lNUFeBDhcAAAAMSURBVAjXY2DY/QYAAmYBqC0q4zEAAAAASUVORK5CYII="
+                            self.resultElement["version"] = "0.0.0"
+                        } else {
+                            if(ActionsEnum.SWITCH.rawValue == parameters[0]) {
+                                self.app = XCUIApplication(bundleIdentifier: parameters[1])
+                                self.app.activate()
+                                self.resultElement["message"] = "switch app " + parameters[1]
+                                self.resultElement["status"] = 0
+                            } else {
+                                if(ActionsEnum.STOP.rawValue == parameters[0]) {
+                                    self.app = XCUIApplication(bundleIdentifier: parameters[1])
+                                    self.app.terminate()
+                                    self.resultElement["message"] = "stop app " + parameters[1]
+                                    self.resultElement["status"] = 0
+                                } else {
+                                    self.resultElement["message"] = "missiing app action type " + parameters[0]
+                                    self.resultElement["status"] = -42
+                                }
+                            }
+                            
+                        }
+                        
+                    } else {
+                        self.resultElement["message"] = "missing app action"
+                        self.resultElement["status"] = -41
+                    }
+                    break
+                case ActionsEnum.INFO.rawValue:
+                    self.driverInfoBase()
+                    self.resultElement["message"] = "device capabilities"
+                    self.resultElement["status"] = 0
+                    self.resultElement["id"] = self.uid
+                    self.resultElement["model"] = self.model
+                    self.resultElement["manufacturer"] = "Apple"
+                    self.resultElement["brand"] = "Apple"
+                    self.resultElement["version"] = self.osVersion
+                    self.resultElement["bluetoothName"] = ""
+                    break
+                default:
+                    self.resultElement["status"] = -12
+                    self.resultElement["message"] = "unknow command " + action
+                    break
+                }
             }
             
             if(action == ActionsEnum.CAPTURE.rawValue) {
@@ -808,7 +816,7 @@ class atsDriver: XCTestCase {
         self.resultElement["channelY"] = 0
     }
     
-
+    
     
     func checkTcpPortForListen(port: in_port_t) -> (Bool, descr: String) {
         
