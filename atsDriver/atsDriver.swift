@@ -493,11 +493,11 @@ class atsDriver: XCTestCase {
                     self.resultElement["message"] = "device capabilities"
                     self.resultElement["status"] = 0
                     self.resultElement["id"] = self.uid
-                    self.resultElement["model"] = self.model
+                    self.resultElement["model"] = ""
                     self.resultElement["manufacturer"] = "Apple"
                     self.resultElement["brand"] = "Apple"
                     self.resultElement["version"] = self.osVersion
-                    self.resultElement["bluetoothName"] = ""
+                    self.resultElement["bluetoothName"] = self.model
                     break
                 default:
                     self.resultElement["status"] = -12
@@ -807,7 +807,7 @@ class atsDriver: XCTestCase {
     func driverInfoBase() {
         self.resultElement["os"] = "ios"
         self.resultElement["driverVersion"] = "1.0.0"
-        self.resultElement["systemName"] = model + " " + osVersion
+        self.resultElement["systemName"] = model + " - " + osVersion
         self.resultElement["deviceWidth"] = deviceWidth
         self.resultElement["deviceHeight"] = deviceHeight
         self.resultElement["channelWidth"] = deviceWidth
