@@ -44,7 +44,7 @@ class atsDriver: XCTestCase {
     var cachedDescription: String = ""
     
     let osVersion = UIDevice.current.systemVersion
-    let model = UIDevice.modelName
+    let model = UIDevice.modelName.replacingOccurrences(of: "Simulator ", with: "")
     let simulator = UIDevice.modelName.range(of: "Simulator", options: .caseInsensitive) != nil
     let uid = UIDevice.current.identifierForVendor!.uuidString
     let bluetoothName = UIDevice.current.name
@@ -405,7 +405,8 @@ class atsDriver: XCTestCase {
                         if(ActionsEnum.INPUT.rawValue == parameters[1]) {
                             let text = parameters[2]
                             if(text == ActionsEnum.EMPTY.rawValue) {
-                                self.tapCoordinate(at: flatElement!.x + (flatElement!.width * 0.90), and: flatElement!.y + (flatElement!.height / 2))
+                                //self.tapCoordinate(at: flatElement!.x + (flatElement!.width * 0.90), and: flatElement!.y + (flatElement!.height / 2))
+                                self.clearText(x: flatElement!.x, y: flatElement!.y)
                             } else {
                                 self.app.typeText(text)
                                 self.resultElement["status"] = 0
@@ -499,11 +500,11 @@ class atsDriver: XCTestCase {
                     self.resultElement["message"] = "device capabilities"
                     self.resultElement["status"] = 0
                     self.resultElement["id"] = self.uid
-                    self.resultElement["model"] = self.simulator ? self.model : self.bluetoothName
+                    self.resultElement["model"] = self.model
                     self.resultElement["manufacturer"] = "Apple"
                     self.resultElement["brand"] = "Apple"
                     self.resultElement["version"] = self.osVersion
-                    self.resultElement["bluetoothName"] = self.simulator ? self.bluetoothName : self.model
+                    self.resultElement["bluetoothName"] = self.bluetoothName
                     self.resultElement["simulator"] = self.simulator
                     break
                 default:
@@ -550,6 +551,25 @@ class atsDriver: XCTestCase {
             }
         }
     }
+    
+    func clearText(x: Double, y: Double) {
+        self.tapCoordinate(at: x, and: y)
+        var select = XCUIApplication().menuItems["Select All"]
+        
+        if !select.exists {
+            select = XCUIApplication().menuItems["Select"]
+        } else if(!select.exists) {
+            select = XCUIApplication().menuItems["Tout sélect."]
+        } else if(!select.exists) {
+            select = XCUIApplication().menuItems["Sélectionner"]
+        }
+        //For empty fields there will be no "Select All", so we need to check
+        if select.waitForExistence(timeout: 0.5), select.exists {
+            select.tap()
+            self.app.typeText(String(XCUIKeyboardKey.delete.rawValue))
+        }
+    }
+
     
     func split(input: String, regex: String) -> [String] {
         
