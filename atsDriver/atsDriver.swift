@@ -291,6 +291,18 @@ class atsDriver: XCTestCase {
                         self.resultElement["status"] = -41
                     }
                     break
+                    
+                case "capture2":
+                    if(self.app == nil) {
+                        self.resultElement["message"] = "no app has been launched"
+                        self.resultElement["status"] = -99
+                        break
+                    }
+                    
+                    self.resultElement["message"] = "root_description"
+                    self.resultElement["status"] = 0
+                    self.resultElement["root"] = self.app.debugDescription
+                    
                 case ActionsEnum.CAPTURE.rawValue:
                     if(self.app == nil) {
                         self.resultElement["message"] = "no app has been launched"
