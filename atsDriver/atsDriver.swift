@@ -45,6 +45,7 @@ class atsDriver: XCTestCase {
     
     let osVersion = UIDevice.current.systemVersion
     let model = UIDevice.modelName
+    let simulator = UIDevice.modelName.range(of: "Simulator", options: .caseInsensitive) != nil
     let uid = UIDevice.current.identifierForVendor!.uuidString
     var deviceWidth = 0.0
     var deviceHeight = 0.0
@@ -391,11 +392,7 @@ class atsDriver: XCTestCase {
                         if(ActionsEnum.INPUT.rawValue == parameters[1]) {
                             let text = parameters[2]
                             if(text == ActionsEnum.EMPTY.rawValue) {
-                                do {
-                                    self.pressAndDeleteCoordinate(at: flatElement!.x, and: flatElement!.y)
-                                } catch {
-                                    print("Cannot find elemen delete")
-                                }
+                                self.tapCoordinate(at: flatElement!.x + (flatElement!.width * 0.90), and: flatElement!.y + (flatElement!.height / 2))
                             } else {
                                 self.app.typeText(text)
                                 self.resultElement["status"] = 0
@@ -445,13 +442,20 @@ class atsDriver: XCTestCase {
                 case ActionsEnum.APP.rawValue:
                     if(parameters.count > 1) {
                         if(ActionsEnum.START.rawValue == parameters[0]) {
-                            self.app = XCUIApplication(bundleIdentifier: parameters[1])
-                            self.app.launch();
-                            self.resultElement["message"] = "start app " + parameters[1]
-                            self.resultElement["status"] = 0
-                            self.resultElement["label"] = self.app.label
-                            self.resultElement["icon"] = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAC4jAAAuIwF4pT92AAAAB3RJTUUH4wgNCzQS2tg9zgAAABl0RVh0Q29tbWVudABDcmVhdGVkIHdpdGggR0lNUFeBDhcAAAAMSURBVAjXY2DY/QYAAmYBqC0q4zEAAAAASUVORK5CYII="
-                            self.resultElement["version"] = "0.0.0"
+                            self.app = XCUIApplication.init(bundleIdentifier: parameters[1])
+                            
+                            if(self.app.state.rawValue > 0) {
+                                self.app.launch()
+                                self.resultElement["message"] = "start app " + parameters[1]
+                                self.resultElement["status"] = 0
+                                self.resultElement["label"] = self.app.label
+                                self.resultElement["icon"] = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAC4jAAAuIwF4pT92AAAAB3RJTUUH4wgNCzQS2tg9zgAAABl0RVh0Q29tbWVudABDcmVhdGVkIHdpdGggR0lNUFeBDhcAAAAMSURBVAjXY2DY/QYAAmYBqC0q4zEAAAAASUVORK5CYII="
+                                self.resultElement["version"] = "0.0.0"
+                            } else {
+                                self.resultElement["message"] = "App is not installed on device"
+                                self.resultElement["status"] = -99
+                                self.app = nil
+                            }
                         } else {
                             if(ActionsEnum.SWITCH.rawValue == parameters[0]) {
                                 self.app = XCUIApplication(bundleIdentifier: parameters[1])
@@ -487,7 +491,7 @@ class atsDriver: XCTestCase {
                     self.resultElement["brand"] = "Apple"
                     self.resultElement["version"] = self.osVersion
                     self.resultElement["bluetoothName"] = self.name
-                    self.resultElement["simulator"] = true
+                    self.resultElement["simulator"] = self.simulator
                     break
                 default:
                     self.resultElement["status"] = -12
@@ -714,18 +718,6 @@ class atsDriver: XCTestCase {
         let normalized = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
         let coordinate = normalized.withOffset(CGVector(dx: xCoordinate, dy: yCoordinate))
         coordinate.tap()
-    }
-    
-    func pressAndDeleteCoordinate(at xCoordinate: Double, and yCoordinate: Double) {
-        let normalized = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
-        let coordinate = normalized.withOffset(CGVector(dx: xCoordinate, dy: yCoordinate))
-        coordinate.press(forDuration: 1.2)
-        let selectAll = XCUIApplication().menuItems["Select All"]
-        //For empty fields there will be no "Select All", so we need to check
-        if selectAll.waitForExistence(timeout: 0.5), selectAll.exists {
-            selectAll.tap()
-            self.app.typeText(String(XCUIKeyboardKey.delete.rawValue))
-        }
     }
     
     func retrieveElement(parameter: String, field: String) -> XCUIElement? {
