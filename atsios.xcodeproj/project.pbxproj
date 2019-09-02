@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0400C0A8231D145B004CD4C9 /* UIDeviceName.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0400C0A7231D145B004CD4C9 /* UIDeviceName.swift */; };
 		0417A86D231535850094FC89 /* UIElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0417A86C231535850094FC89 /* UIElement.swift */; };
 		0417A86F231535A10094FC89 /* ActionsEnum.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0417A86E231535A10094FC89 /* ActionsEnum.swift */; };
 		0417A871231536100094FC89 /* DeviceButtons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0417A870231536100094FC89 /* DeviceButtons.swift */; };
@@ -36,6 +37,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		0400C0A7231D145B004CD4C9 /* UIDeviceName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIDeviceName.swift; sourceTree = "<group>"; };
 		0417A86C231535850094FC89 /* UIElement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIElement.swift; sourceTree = "<group>"; };
 		0417A86E231535A10094FC89 /* ActionsEnum.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionsEnum.swift; sourceTree = "<group>"; };
 		0417A870231536100094FC89 /* DeviceButtons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceButtons.swift; sourceTree = "<group>"; };
@@ -137,6 +139,7 @@
 				0417A870231536100094FC89 /* DeviceButtons.swift */,
 				0417A8722315362F0094FC89 /* Frame.swift */,
 				0417A8742315366D0094FC89 /* EnumFunctions.swift */,
+				0400C0A7231D145B004CD4C9 /* UIDeviceName.swift */,
 			);
 			path = atsDriver;
 			sourceTree = "<group>";
@@ -313,6 +316,7 @@
 				0417A871231536100094FC89 /* DeviceButtons.swift in Sources */,
 				0417A86D231535850094FC89 /* UIElement.swift in Sources */,
 				0417A8752315366D0094FC89 /* EnumFunctions.swift in Sources */,
+				0400C0A8231D145B004CD4C9 /* UIDeviceName.swift in Sources */,
 				047BFA8022F178D800BB2E25 /* atsDriver.swift in Sources */,
 				0417A8732315362F0094FC89 /* Frame.swift in Sources */,
 			);

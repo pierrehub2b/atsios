@@ -44,7 +44,7 @@ class atsDriver: XCTestCase {
     var cachedDescription: String = ""
     
     let osVersion = UIDevice.current.systemVersion
-    let model = UIDevice.current.name
+    let model = UIDevice.modelName
     let uid = UIDevice.current.identifierForVendor!.uuidString
     var deviceWidth = 0.0
     var deviceHeight = 0.0
@@ -219,16 +219,6 @@ class atsDriver: XCTestCase {
                     if(parameters.count > 0) {
                         if(ActionsEnum.START.rawValue == parameters[0]) {
                             self.continueExecution = true
-                            
-                            let screenNativeBounds = XCUIScreen.main.screenshot().image
-                            self.deviceWidth = Double(screenNativeBounds.size.width)
-                            self.deviceHeight = Double(screenNativeBounds.size.height)
-                            if(self.deviceHeight > self.maxHeight) {
-                                self.ratioScreen = self.maxHeight / self.deviceHeight
-                                self.deviceWidth = self.deviceWidth * self.ratioScreen
-                                self.deviceHeight = self.deviceHeight * self.ratioScreen
-                            }
-                            
                             self.driverInfoBase()
                             self.resultElement["status"] = 0
                             self.resultElement["screenCapturePort"] = self.udpPort
@@ -414,8 +404,7 @@ class atsDriver: XCTestCase {
                             let text = parameters[2]
                             if(text == ActionsEnum.EMPTY.rawValue) {
                                 do {
-                                    var deleteKey = self.app.keys.matching(identifier: "delete").firstMatch
-                                    try deleteKey.press(forDuration: 2)
+                                    self.pressAndDeleteCoordinate(at: flatElement!.x, and: flatElement!.y)
                                 } catch {
                                     print("Cannot find elemen delete")
                                 }
@@ -509,7 +498,8 @@ class atsDriver: XCTestCase {
                     self.resultElement["manufacturer"] = "Apple"
                     self.resultElement["brand"] = "Apple"
                     self.resultElement["version"] = self.osVersion
-                    self.resultElement["bluetoothName"] = self.model
+                    self.resultElement["bluetoothName"] = self.name
+                    self.resultElement["simulator"] = true
                     break
                 default:
                     self.resultElement["status"] = -12
@@ -735,8 +725,19 @@ class atsDriver: XCTestCase {
     func tapCoordinate(at xCoordinate: Double, and yCoordinate: Double) {
         let normalized = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
         let coordinate = normalized.withOffset(CGVector(dx: xCoordinate, dy: yCoordinate))
-        
         coordinate.tap()
+    }
+    
+    func pressAndDeleteCoordinate(at xCoordinate: Double, and yCoordinate: Double) {
+        let normalized = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
+        let coordinate = normalized.withOffset(CGVector(dx: xCoordinate, dy: yCoordinate))
+        coordinate.press(forDuration: 1.2)
+        let selectAll = XCUIApplication().menuItems["Select All"]
+        //For empty fields there will be no "Select All", so we need to check
+        if selectAll.waitForExistence(timeout: 0.5), selectAll.exists {
+            selectAll.tap()
+            self.app.typeText(String(XCUIKeyboardKey.delete.rawValue))
+        }
     }
     
     func retrieveElement(parameter: String, field: String) -> XCUIElement? {
@@ -817,6 +818,15 @@ class atsDriver: XCTestCase {
     }
     
     func driverInfoBase() {
+        let screenNativeBounds = XCUIScreen.main.screenshot().image
+        self.deviceWidth = Double(screenNativeBounds.size.width)
+        self.deviceHeight = Double(screenNativeBounds.size.height)
+        if(self.deviceHeight > self.maxHeight) {
+            self.ratioScreen = self.maxHeight / self.deviceHeight
+            self.deviceWidth = self.deviceWidth * self.ratioScreen
+            self.deviceHeight = self.deviceHeight * self.ratioScreen
+        }
+        
         self.resultElement["os"] = "ios"
         self.resultElement["driverVersion"] = "1.0.0"
         self.resultElement["systemName"] = model + " - " + osVersion
