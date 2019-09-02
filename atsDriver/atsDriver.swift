@@ -47,6 +47,7 @@ class atsDriver: XCTestCase {
     let model = UIDevice.modelName
     let simulator = UIDevice.modelName.range(of: "Simulator", options: .caseInsensitive) != nil
     let uid = UIDevice.current.identifierForVendor!.uuidString
+    let bluetoothName = UIDevice.current.name
     var deviceWidth = 0.0
     var deviceHeight = 0.0
     let maxHeight = 860.0
@@ -502,7 +503,7 @@ class atsDriver: XCTestCase {
                     self.resultElement["manufacturer"] = "Apple"
                     self.resultElement["brand"] = "Apple"
                     self.resultElement["version"] = self.osVersion
-                    self.resultElement["bluetoothName"] = self.name
+                    self.resultElement["bluetoothName"] = self.bluetoothName
                     self.resultElement["simulator"] = self.simulator
                     break
                 default:
