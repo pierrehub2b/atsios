@@ -499,11 +499,11 @@ class atsDriver: XCTestCase {
                     self.resultElement["message"] = "device capabilities"
                     self.resultElement["status"] = 0
                     self.resultElement["id"] = self.uid
-                    self.resultElement["model"] = self.model
+                    self.resultElement["model"] = self.simulator ? self.model : self.bluetoothName
                     self.resultElement["manufacturer"] = "Apple"
                     self.resultElement["brand"] = "Apple"
                     self.resultElement["version"] = self.osVersion
-                    self.resultElement["bluetoothName"] = self.bluetoothName
+                    self.resultElement["bluetoothName"] = self.simulator ? self.bluetoothName : self.model
                     self.resultElement["simulator"] = self.simulator
                     break
                 default:
@@ -823,12 +823,12 @@ class atsDriver: XCTestCase {
         self.resultElement["os"] = "ios"
         self.resultElement["driverVersion"] = "1.0.0"
         self.resultElement["systemName"] = model + " - " + osVersion
-        self.resultElement["deviceWidth"] = deviceWidth
-        self.resultElement["deviceHeight"] = deviceHeight
-        self.resultElement["channelWidth"] = deviceWidth
-        self.resultElement["channelHeight"] = deviceHeight
-        self.resultElement["channelX"] = 0
-        self.resultElement["channelY"] = 0
+        self.resultElement["deviceWidth"] = Double(screenNativeBounds.size.width)
+        self.resultElement["deviceHeight"] = Double(screenNativeBounds.size.height)
+        self.resultElement["channelWidth"] = Double(screenNativeBounds.size.width)
+        self.resultElement["channelHeight"] = Double(screenNativeBounds.size.height)
+        self.resultElement["channelX"] = Double(screenNativeBounds.size.width)
+        self.resultElement["channelY"] = Double(screenNativeBounds.size.height)
     }
     
     
