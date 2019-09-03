@@ -52,8 +52,6 @@ class atsDriver: XCTestCase {
     var deviceHeight = 0.0
     let maxHeight = 860.0
     var ratioScreen = 1.0
-    var ratioWidth = 1.0
-    var ratioHeight = 1.0
     
     var continueExecution = true
     
@@ -68,13 +66,22 @@ class atsDriver: XCTestCase {
     
     override func setUp() {
         super.setUp()
-        
+        continueAfterFailure = true
         
         udpThread.async {
             self.udpStart()
         }
         
         XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
+        
+        for i in 8080..<65000 {
+            let (isFree, _) = checkTcpPortForListen(port: UInt16(i))
+            if (isFree == true && i != self.udpPort) {
+                self.port = i
+                break;
+            }
+        }
+        
         self.setupWebApp()
         self.setupApp()
     }
@@ -179,14 +186,6 @@ class atsDriver: XCTestCase {
         
         let loop = try! SelectorEventLoop(selector: try! KqueueSelector())
         
-        for i in 8080..<65000 {
-            let (isFree, _) = checkTcpPortForListen(port: UInt16(i))
-            if (isFree == true && i != self.udpPort) {
-                self.port = i
-                break;
-            }
-        }
-        
         let server = DefaultHTTPServer(eventLoop: loop, interface: "0.0.0.0", port: self.port) {
             (
             environ: [String: Any],
@@ -235,7 +234,6 @@ class atsDriver: XCTestCase {
                                 }
                             } else {
                                 if(ActionsEnum.QUIT.rawValue == parameters[0]) {
-                                    //self.tearDown()
                                     self.app.terminate()
                                     self.continueExecution = false
                                     XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
@@ -284,7 +282,7 @@ class atsDriver: XCTestCase {
                     }
                     break
                     
-                case "capture2":
+                case ActionsEnum.CAPTURE2.rawValue:
                     if(self.app == nil) {
                         self.resultElement["message"] = "no app has been launched"
                         self.resultElement["status"] = -99
@@ -304,7 +302,7 @@ class atsDriver: XCTestCase {
                     
                     var description = self.app.debugDescription
                     
-                    //if(self.cachedDescription != description){
+                    if(self.cachedDescription != description){
                         self.cachedDescription = description;
                         
                         description = description.replacingOccurrences(of: "'\n", with: "'⌘")
@@ -315,6 +313,9 @@ class atsDriver: XCTestCase {
                         var descriptionTable = description.split(separator: "⌘")
                         var leveledTable: [(Int,String)] = [(Int,String)]()
                         
+                        if(descriptionTable.count < 3) {
+                            break
+                        }
                         for index in 0...descriptionTable.count-3 {
                             //no traitment of line that are not reference composants
                             var currentLine = String(descriptionTable[index])
@@ -332,14 +333,6 @@ class atsDriver: XCTestCase {
                             }
                         }
                         
-                        //                        if(self.leveledTableCount == 0) {
-                        //                            self.leveledTableCount = leveledTable.count
-                        //                        } else {
-                        //                            if(self.leveledTableCount != leveledTable.count) {
-                        //                                self.domThread = DispatchQueue(label: "domQueue", qos: .userInitiated)
-                        //                            }
-                        //                        }
-                        
                         var intervalSinceLastCapture = NSDate().timeIntervalSince1970 - self.lastCapture
                         if(leveledTable.count == self.flatStruct.count && intervalSinceLastCapture < 2) {
                             break
@@ -353,14 +346,6 @@ class atsDriver: XCTestCase {
                         var y = Double(self.cleanString(input: String(rootLine[3]))) as! Double
                         var width = Double(self.cleanString(input: String(rootLine[4]))) as! Double
                         var height = Double(self.cleanString(input: String(rootLine[5]))) as! Double
-                        
-                        if(height != self.deviceHeight && self.simulator) {
-                            self.ratioHeight = self.deviceHeight / height
-                        }
-
-                        if(width != self.deviceWidth && self.simulator) {
-                            self.ratioWidth = self.deviceWidth / width
-                        }
                     
                         if(self.rootNode != nil) {
                             self.captureStruct = self.convertIntoJSONString(arrayObject: self.rootNode!)
@@ -372,10 +357,10 @@ class atsDriver: XCTestCase {
                                 id: levelUID,
                                 tag: "root",
                                 clickable: false,
-                                x: x * self.ratioWidth,
-                                y: y * self.ratioHeight,
-                                width: width * self.ratioWidth,
-                                height: height * self.ratioHeight,
+                                x: x * self.ratioScreen,
+                                y: y * self.ratioScreen,
+                                width: width * self.ratioScreen,
+                                height: height * self.ratioScreen,
                                 children: self.getChildrens(currentLevel: 1, currentIndex: 0, endedIndex: leveledTable.count-1, leveledTable: leveledTable),
                                 attributes: [:],
                                 channelY: 0,
@@ -390,7 +375,7 @@ class atsDriver: XCTestCase {
                         self.domThread.async(execute: workItem)
                         workItem.wait()
                         
-                    //}
+                    }
                     
                     break
                 case ActionsEnum.ELEMENT.rawValue:
@@ -406,23 +391,26 @@ class atsDriver: XCTestCase {
                             let text = parameters[2]
                             if(text == ActionsEnum.EMPTY.rawValue) {
                                 self.tapCoordinate(at: flatElement!.x + (flatElement!.width * 0.90), and: flatElement!.y + (flatElement!.height / 2))
-                                //self.clearText(x: flatElement!.x, y: flatElement!.y)
                             } else {
                                 self.tapCoordinate(at: flatElement!.x, and: flatElement!.y)
-                                self.app.typeText(text)
                                 self.resultElement["status"] = 0
-                                self.resultElement["message"] = "element tap text: " + text
+                                if(self.app.keyboards.count > 0) {
+                                    self.app.typeText(text)
+                                    self.resultElement["message"] = "element tap text: " + text
+                                } else {
+                                    self.resultElement["message"] = "no keyboard on screen for tap text"
+                                }
                             }
                         } else {
-                            var offSetX = 0
-                            var offSetY = 0
+                            var offSetX = 0.0
+                            var offSetY = 0.0
                             if(parameters.count > 3) {
-                                offSetX = Int(parameters[2])!
-                                offSetY = Int(parameters[3])!
+                                offSetX = Double(parameters[2])!
+                                offSetY = Double(parameters[3])!
                             }
                             
-                            let calculateX = Double(flatElement!.x ) + Double(offSetX)
-                            let calculateY = Double(flatElement!.y ) + Double(offSetY)
+                            let calculateX = Double(flatElement!.x ) + offSetX
+                            let calculateY = Double(flatElement!.y ) + offSetY
                             
                             if(ActionsEnum.TAP.rawValue == parameters[1]) {
                                 self.tapCoordinate(at: calculateX, and: calculateY)
@@ -458,18 +446,20 @@ class atsDriver: XCTestCase {
                     if(parameters.count > 1) {
                         if(ActionsEnum.START.rawValue == parameters[0]) {
                             self.app = XCUIApplication.init(bundleIdentifier: parameters[1])
-                            
                             if(self.app.state.rawValue > 0) {
-                                self.app.launch()
+                                //if (self.app.exists || parameters[1].contains("com.apple")) {
+                                    self.app.launch()
+//                                } else {
+//                                    self.resultElement["message"] = "App is not installed on device"
+//                                    self.resultElement["status"] = -1
+//                                    self.app = nil
+//                                    break
+//                                }
                                 self.resultElement["message"] = "start app " + parameters[1]
                                 self.resultElement["status"] = 0
                                 self.resultElement["label"] = self.app.label
                                 self.resultElement["icon"] = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAC4jAAAuIwF4pT92AAAAB3RJTUUH4wgNCzQS2tg9zgAAABl0RVh0Q29tbWVudABDcmVhdGVkIHdpdGggR0lNUFeBDhcAAAAMSURBVAjXY2DY/QYAAmYBqC0q4zEAAAAASUVORK5CYII="
                                 self.resultElement["version"] = "0.0.0"
-                            } else {
-                                self.resultElement["message"] = "App is not installed on device"
-                                self.resultElement["status"] = -99
-                                self.app = nil
                             }
                         } else {
                             if(ActionsEnum.SWITCH.rawValue == parameters[0]) {
@@ -690,10 +680,10 @@ class atsDriver: XCTestCase {
                         id: levelUID,
                         tag: self.cleanString(input: String(splittedLine[0])),
                         clickable: true,
-                        x: x * self.ratioWidth,
-                        y: y * self.ratioHeight,
-                        width: width * self.ratioWidth,
-                        height: height * self.ratioHeight,
+                        x: x * self.ratioScreen,
+                        y: y * self.ratioScreen,
+                        width: width * self.ratioScreen,
+                        height: height * self.ratioScreen,
                         children: self.getChildrens(currentLevel: currentLevel+1, currentIndex: line+1, endedIndex: endIn, leveledTable: leveledTable),
                         attributes: attr,
                         channelY: nil,
@@ -817,7 +807,7 @@ class atsDriver: XCTestCase {
         let screenNativeBounds = XCUIScreen.main.screenshot().image
         self.deviceWidth = Double(screenNativeBounds.size.width)
         self.deviceHeight = Double(screenNativeBounds.size.height)
-        if(self.deviceHeight > self.maxHeight && self.simulator) {
+        if(self.deviceHeight > self.maxHeight) {
             self.ratioScreen = self.maxHeight / self.deviceHeight
             self.deviceWidth = self.deviceWidth * self.ratioScreen
             self.deviceHeight = self.deviceHeight * self.ratioScreen

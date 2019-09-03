@@ -15,6 +15,7 @@ enum ActionsEnum: String {
     case STOP = "stop"
     case SWITCH = "switch"
     case CAPTURE = "capture"
+    case CAPTURE2 = "capture2"
     case ELEMENT = "element"
     case TAP = "tap"
     case INPUT = "input"
