@@ -304,7 +304,7 @@ class atsDriver: XCTestCase {
                     
                     var description = self.app.debugDescription
                     
-                    if(self.cachedDescription != description){
+                    //if(self.cachedDescription != description){
                         self.cachedDescription = description;
                         
                         description = description.replacingOccurrences(of: "'\n", with: "'⌘")
@@ -354,14 +354,14 @@ class atsDriver: XCTestCase {
                         var width = Double(self.cleanString(input: String(rootLine[4]))) as! Double
                         var height = Double(self.cleanString(input: String(rootLine[5]))) as! Double
                         
-                        if(height != self.deviceHeight) {
+                        if(height != self.deviceHeight && self.simulator) {
                             self.ratioHeight = self.deviceHeight / height
                         }
-                        
-                        if(width != self.deviceWidth) {
+
+                        if(width != self.deviceWidth && self.simulator) {
                             self.ratioWidth = self.deviceWidth / width
                         }
-                        
+                    
                         if(self.rootNode != nil) {
                             self.captureStruct = self.convertIntoJSONString(arrayObject: self.rootNode!)
                         } else {
@@ -390,7 +390,7 @@ class atsDriver: XCTestCase {
                         self.domThread.async(execute: workItem)
                         workItem.wait()
                         
-                    }
+                    //}
                     
                     break
                 case ActionsEnum.ELEMENT.rawValue:
@@ -405,9 +405,10 @@ class atsDriver: XCTestCase {
                         if(ActionsEnum.INPUT.rawValue == parameters[1]) {
                             let text = parameters[2]
                             if(text == ActionsEnum.EMPTY.rawValue) {
-                                //self.tapCoordinate(at: flatElement!.x + (flatElement!.width * 0.90), and: flatElement!.y + (flatElement!.height / 2))
-                                self.clearText(x: flatElement!.x, y: flatElement!.y)
+                                self.tapCoordinate(at: flatElement!.x + (flatElement!.width * 0.90), and: flatElement!.y + (flatElement!.height / 2))
+                                //self.clearText(x: flatElement!.x, y: flatElement!.y)
                             } else {
+                                self.tapCoordinate(at: flatElement!.x, and: flatElement!.y)
                                 self.app.typeText(text)
                                 self.resultElement["status"] = 0
                                 self.resultElement["message"] = "element tap text: " + text
@@ -549,24 +550,6 @@ class atsDriver: XCTestCase {
                     ? nsString.substring(with: result.range(at: $0))
                     : ""
             }
-        }
-    }
-    
-    func clearText(x: Double, y: Double) {
-        self.tapCoordinate(at: x, and: y)
-        var select = XCUIApplication().menuItems["Select All"]
-        
-        if !select.exists {
-            select = XCUIApplication().menuItems["Select"]
-        } else if(!select.exists) {
-            select = XCUIApplication().menuItems["Tout sélect."]
-        } else if(!select.exists) {
-            select = XCUIApplication().menuItems["Sélectionner"]
-        }
-        //For empty fields there will be no "Select All", so we need to check
-        if select.waitForExistence(timeout: 0.5), select.exists {
-            select.tap()
-            self.app.typeText(String(XCUIKeyboardKey.delete.rawValue))
         }
     }
 
@@ -834,7 +817,7 @@ class atsDriver: XCTestCase {
         let screenNativeBounds = XCUIScreen.main.screenshot().image
         self.deviceWidth = Double(screenNativeBounds.size.width)
         self.deviceHeight = Double(screenNativeBounds.size.height)
-        if(self.deviceHeight > self.maxHeight) {
+        if(self.deviceHeight > self.maxHeight && self.simulator) {
             self.ratioScreen = self.maxHeight / self.deviceHeight
             self.deviceWidth = self.deviceWidth * self.ratioScreen
             self.deviceHeight = self.deviceHeight * self.ratioScreen
