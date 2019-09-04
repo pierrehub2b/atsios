@@ -48,8 +48,8 @@ class atsDriver: XCTestCase {
     let simulator = UIDevice.modelName.range(of: "Simulator", options: .caseInsensitive) != nil
     let uid = UIDevice.current.identifierForVendor!.uuidString
     let bluetoothName = UIDevice.current.name
-    var deviceWidth = 0.0
-    var deviceHeight = 0.0
+    var deviceWidth = 1.0
+    var deviceHeight = 1.0
     let maxHeight = 860.0
     var ratioScreen = 1.0
     
@@ -220,6 +220,9 @@ class atsDriver: XCTestCase {
                     if(parameters.count > 0) {
                         if(ActionsEnum.START.rawValue == parameters[0]) {
                             self.continueExecution = true
+                            if(self.deviceWidth == 1.0 && self.deviceHeight == 1.0) {
+                                self.setupDriverSize()
+                            }
                             self.driverInfoBase()
                             self.resultElement["status"] = 0
                             self.resultElement["screenCapturePort"] = self.udpPort
@@ -337,16 +340,7 @@ class atsDriver: XCTestCase {
                         if(leveledTable.count == self.flatStruct.count && intervalSinceLastCapture < 2) {
                             break
                         }
-                        
-                        //get first line for ratio
-                        var rootLine = leveledTable[0].1.split(separator: ",")
-                        let levelUID = UUID().uuidString
-                        
-                        var x = Double(self.cleanString(input: String(rootLine[2]))) as! Double
-                        var y = Double(self.cleanString(input: String(rootLine[3]))) as! Double
-                        var width = Double(self.cleanString(input: String(rootLine[4]))) as! Double
-                        var height = Double(self.cleanString(input: String(rootLine[5]))) as! Double
-                    
+
                         if(self.rootNode != nil) {
                             self.captureStruct = self.convertIntoJSONString(arrayObject: self.rootNode!)
                         } else {
@@ -354,17 +348,17 @@ class atsDriver: XCTestCase {
                         }
                         let workItem = DispatchWorkItem {
                             let rootNode = UIElement(
-                                id: levelUID,
+                                id: UUID().uuidString,
                                 tag: "root",
                                 clickable: false,
-                                x: x * self.ratioScreen,
-                                y: y * self.ratioScreen,
-                                width: width * self.ratioScreen,
-                                height: height * self.ratioScreen,
+                                x: 0,
+                                y: 0,
+                                width: self.deviceWidth,
+                                height: self.deviceHeight,
                                 children: self.getChildrens(currentLevel: 1, currentIndex: 0, endedIndex: leveledTable.count-1, leveledTable: leveledTable),
                                 attributes: [:],
                                 channelY: 0,
-                                channelHeight: Double(self.cleanString(input: String(rootLine[5])))
+                                channelHeight: self.deviceHeight
                             )
                             
                             self.flatStruct = self.getFlatStruct(rootNode: rootNode)
@@ -451,7 +445,7 @@ class atsDriver: XCTestCase {
                                     self.app.launch()
 //                                } else {
 //                                    self.resultElement["message"] = "App is not installed on device"
-//                                    self.resultElement["status"] = -1
+//                                    self.resultElement["status"] = -51
 //                                    self.app = nil
 //                                    break
 //                                }
@@ -487,6 +481,7 @@ class atsDriver: XCTestCase {
                     }
                     break
                 case ActionsEnum.INFO.rawValue:
+                    self.setupDriverSize()
                     self.driverInfoBase()
                     self.resultElement["message"] = "device capabilities"
                     self.resultElement["status"] = 0
@@ -528,6 +523,16 @@ class atsDriver: XCTestCase {
         
         // Run event loop
         loop.runForever()
+    }
+    
+    func setupDriverSize() {
+        let screenNativeBounds = XCUIScreen.main.screenshot().image
+        if(Double(screenNativeBounds.size.height) > self.maxHeight) {
+            self.ratioScreen = self.maxHeight / self.deviceHeight
+        }
+        
+        self.deviceWidth = Double(screenNativeBounds.size.width) * self.ratioScreen
+        self.deviceHeight = Double(screenNativeBounds.size.height) * self.ratioScreen
     }
     
     func matchingStrings(input: String, regex: String) -> [[String]] {
@@ -804,24 +809,15 @@ class atsDriver: XCTestCase {
     }
     
     func driverInfoBase() {
-        let screenNativeBounds = XCUIScreen.main.screenshot().image
-        self.deviceWidth = Double(screenNativeBounds.size.width)
-        self.deviceHeight = Double(screenNativeBounds.size.height)
-        if(self.deviceHeight > self.maxHeight) {
-            self.ratioScreen = self.maxHeight / self.deviceHeight
-            self.deviceWidth = self.deviceWidth * self.ratioScreen
-            self.deviceHeight = self.deviceHeight * self.ratioScreen
-        }
-        
         self.resultElement["os"] = "ios"
         self.resultElement["driverVersion"] = "1.0.0"
         self.resultElement["systemName"] = model + " - " + osVersion
-        self.resultElement["deviceWidth"] = Double(screenNativeBounds.size.width)
-        self.resultElement["deviceHeight"] = Double(screenNativeBounds.size.height)
-        self.resultElement["channelWidth"] = Double(screenNativeBounds.size.width)
-        self.resultElement["channelHeight"] = Double(screenNativeBounds.size.height)
-        self.resultElement["channelX"] = Double(screenNativeBounds.size.width)
-        self.resultElement["channelY"] = Double(screenNativeBounds.size.height)
+        self.resultElement["deviceWidth"] = self.deviceWidth
+        self.resultElement["deviceHeight"] = self.deviceHeight
+        self.resultElement["channelWidth"] = self.deviceWidth
+        self.resultElement["channelHeight"] = self.deviceHeight
+        self.resultElement["channelX"] = 0
+        self.resultElement["channelY"] = 0
     }
     
     
