@@ -22,12 +22,13 @@ import Embassy
 import EnvoyAmbassador
 import Socket
 
+public var app: XCUIApplication!
+
 class atsDriver: XCTestCase {
     
     let udpThread = DispatchQueue(label: "udpQueue", qos: .userInitiated)
     var domThread = DispatchQueue(label: "domQueue", qos: .userInitiated)
     var port = 8080
-    var app: XCUIApplication!
     var currentAppIdentifier: String = ""
     var resultElement: [String: Any] = [:]
     var captureStruct: String = ""
@@ -40,7 +41,7 @@ class atsDriver: XCTestCase {
     var imgView: Data? = nil
     var lastCapture: TimeInterval = NSDate().timeIntervalSince1970
     var leveledTableCount = 0
-    
+    var tcpSocket = socket(AF_INET, SOCK_STREAM, 0)
     var cachedDescription: String = ""
     
     let osVersion = UIDevice.current.systemVersion
@@ -225,8 +226,8 @@ class atsDriver: XCTestCase {
                             self.resultElement["screenCapturePort"] = self.udpPort
                         } else {
                             if(ActionsEnum.STOP.rawValue == parameters[0]) {
-                                if(self.app != nil){
-                                    self.app.terminate()
+                                if(app != nil){
+                                    app.terminate()
                                     self.continueExecution = false
                                     XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
                                     self.resultElement["status"] = 0
@@ -234,7 +235,7 @@ class atsDriver: XCTestCase {
                                 }
                             } else {
                                 if(ActionsEnum.QUIT.rawValue == parameters[0]) {
-                                    self.app.terminate()
+                                    app.terminate()
                                     self.continueExecution = false
                                     XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
                                     self.resultElement["status"] = 0
@@ -283,7 +284,7 @@ class atsDriver: XCTestCase {
                     break
                     
                 case ActionsEnum.CAPTURE2.rawValue:
-                    if(self.app == nil) {
+                    if(app == nil) {
                         self.resultElement["message"] = "no app has been launched"
                         self.resultElement["status"] = -99
                         break
@@ -291,16 +292,16 @@ class atsDriver: XCTestCase {
                     
                     self.resultElement["message"] = "root_description"
                     self.resultElement["status"] = 0
-                    self.resultElement["root"] = self.app.debugDescription
+                    self.resultElement["root"] = app.debugDescription
                     
                 case ActionsEnum.CAPTURE.rawValue:
-                    if(self.app == nil) {
+                    if(app == nil) {
                         self.resultElement["message"] = "no app has been launched"
                         self.resultElement["status"] = -99
                         break
                     }
                     
-                    var description = self.app.debugDescription
+                    var description = app.debugDescription
                     
                     if(self.cachedDescription != description){
                         self.cachedDescription = description;
@@ -385,8 +386,8 @@ class atsDriver: XCTestCase {
                             } else {
                                 self.tapCoordinate(at: flatElement!.x, and: flatElement!.y)
                                 self.resultElement["status"] = 0
-                                if(self.app.keyboards.count > 0) {
-                                    self.app.typeText(text)
+                                if(app.keyboards.count > 0) {
+                                    app.typeText(text)
                                     self.resultElement["message"] = "element tap text: " + text
                                 } else {
                                     self.resultElement["message"] = "no keyboard on screen for tap text"
@@ -397,7 +398,7 @@ class atsDriver: XCTestCase {
                             var offSetY = 0.0
                             if(parameters.count > 3) {
                                 offSetX = Double(parameters[2])!
-                                offSetY = Double(parameters[3])!
+                                offSetY = Double(parameters[3])! + 30
                             }
                             
                             let calculateX = Double(flatElement!.x ) + offSetX
@@ -412,16 +413,16 @@ class atsDriver: XCTestCase {
                                     let directionX = Double(parameters[4]) ?? 0.0
                                     let directionY = Double(parameters[5]) ?? 0.0
                                     if(directionX > 0.0) {
-                                        self.app.swipeRight()
+                                        app.swipeRight()
                                     }
                                     if(directionX < 0.0) {
-                                        self.app.swipeLeft()
+                                        app.swipeLeft()
                                     }
                                     if(directionY > 0.0) {
-                                        self.app.swipeUp()
+                                        app.swipeUp()
                                     }
                                     if(directionY < 0.0) {
-                                        self.app.swipeDown()
+                                        app.swipeDown()
                                     }
                                     self.resultElement["status"] = 0
                                     self.resultElement["message"] = "swipe element"
@@ -436,32 +437,23 @@ class atsDriver: XCTestCase {
                 case ActionsEnum.APP.rawValue:
                     if(parameters.count > 1) {
                         if(ActionsEnum.START.rawValue == parameters[0]) {
-                            self.app = XCUIApplication.init(bundleIdentifier: parameters[1])
-                            if(self.app.state.rawValue > 0) {
-                                //if (self.app.exists || parameters[1].contains("com.apple")) {
-                                    self.app.launch()
-//                                } else {
-//                                    self.resultElement["message"] = "App is not installed on device"
-//                                    self.resultElement["status"] = -51
-//                                    self.app = nil
-//                                    break
-//                                }
-                                self.resultElement["message"] = "start app " + parameters[1]
-                                self.resultElement["status"] = 0
-                                self.resultElement["label"] = self.app.label
-                                self.resultElement["icon"] = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAC4jAAAuIwF4pT92AAAAB3RJTUUH4wgNCzQS2tg9zgAAABl0RVh0Q29tbWVudABDcmVhdGVkIHdpdGggR0lNUFeBDhcAAAAMSURBVAjXY2DY/QYAAmYBqC0q4zEAAAAASUVORK5CYII="
-                                self.resultElement["version"] = "0.0.0"
-                            }
+                            app = XCUIApplication.init(bundleIdentifier: parameters[1])
+                            self.resultElement["message"] = "start app " + parameters[1]
+                            app.launch()
+                            self.resultElement["status"] = 0
+                            self.resultElement["label"] = app.label
+                            self.resultElement["icon"] = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAC4jAAAuIwF4pT92AAAAB3RJTUUH4wgNCzQS2tg9zgAAABl0RVh0Q29tbWVudABDcmVhdGVkIHdpdGggR0lNUFeBDhcAAAAMSURBVAjXY2DY/QYAAmYBqC0q4zEAAAAASUVORK5CYII="
+                            self.resultElement["version"] = "0.0.0"
                         } else {
                             if(ActionsEnum.SWITCH.rawValue == parameters[0]) {
-                                self.app = XCUIApplication(bundleIdentifier: parameters[1])
-                                self.app.activate()
+                                app = XCUIApplication(bundleIdentifier: parameters[1])
+                                app.activate()
                                 self.resultElement["message"] = "switch app " + parameters[1]
                                 self.resultElement["status"] = 0
                             } else {
                                 if(ActionsEnum.STOP.rawValue == parameters[0]) {
-                                    self.app = XCUIApplication(bundleIdentifier: parameters[1])
-                                    self.app.terminate()
+                                    app = XCUIApplication(bundleIdentifier: parameters[1])
+                                    app.terminate()
                                     self.resultElement["message"] = "stop app " + parameters[1]
                                     self.resultElement["status"] = 0
                                 } else {
@@ -688,14 +680,14 @@ class atsDriver: XCTestCase {
     }
     
     func getAppInfo() -> String {
-        if(self.app != nil) {
+        if(app != nil) {
             let pattern = "'(.*?)'"
-            var packageName = self.matchingStrings(input: String(self.app.description), regex: pattern).first?[1]
+            var packageName = self.matchingStrings(input: String(app.description), regex: pattern).first?[1]
             var informations: [String:String] = [:]
             informations["packageName"] = packageName
-            informations["activity"] = getStateStringValue(rawValue: self.app.state.rawValue)
+            informations["activity"] = getStateStringValue(rawValue: app.state.rawValue)
             informations["system"] = model + " " + osVersion
-            informations["label"] = self.app.label
+            informations["label"] = app.label
             informations["icon"] = ""
             informations["version"] = ""
             informations["os"] = "ios"
@@ -722,10 +714,10 @@ class atsDriver: XCTestCase {
         fieldValue = fieldValue.replacingOccurrences(of: "%22", with: "'")
         fieldValue = fieldValue.replacingOccurrences(of: "%20", with: " ")
         let predicate = NSPredicate(format: "\(parameter) == '\(fieldValue)'")
-        if(self.app == nil) {
+        if(app == nil) {
             return nil
         }
-        let elem = self.app.descendants(matching: .any).element(matching: predicate)
+        let elem = app.descendants(matching: .any).element(matching: predicate)
         if(elem.exists) {
             return elem.firstMatch
         } else {
@@ -814,7 +806,11 @@ class atsDriver: XCTestCase {
         self.resultElement["channelY"] = 0
     }
     
-    
+    func closeSocket() {
+        Darwin.shutdown(self.tcpSocket, SHUT_RDWR)
+        close(self.tcpSocket)
+        print("close socket")
+    }
     
     func checkTcpPortForListen(port: in_port_t) -> (Bool, descr: String) {
         
@@ -844,6 +840,7 @@ class atsDriver: XCTestCase {
             return (false, "\(port), ListenFailed, \(details)")
         }
         release(socket: socketFileDescriptor)
+        self.tcpSocket = socketFileDescriptor
         return (true, "\(port) is free for use")
     }
     
@@ -898,6 +895,7 @@ class atsDriver: XCTestCase {
     }
     
     override func tearDown() {
+        self.closeSocket()
         super.tearDown()
     }
     
