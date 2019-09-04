@@ -220,10 +220,7 @@ class atsDriver: XCTestCase {
                     if(parameters.count > 0) {
                         if(ActionsEnum.START.rawValue == parameters[0]) {
                             self.continueExecution = true
-                            if(self.deviceWidth == 1.0 && self.deviceHeight == 1.0) {
-                                self.setupDriverSize()
-                            }
-                            self.driverInfoBase()
+                            self.driverInfoBase(applyRatio: true)
                             self.resultElement["status"] = 0
                             self.resultElement["screenCapturePort"] = self.udpPort
                         } else {
@@ -481,8 +478,7 @@ class atsDriver: XCTestCase {
                     }
                     break
                 case ActionsEnum.INFO.rawValue:
-                    self.setupDriverSize()
-                    self.driverInfoBase()
+                    self.driverInfoBase(applyRatio: false)
                     self.resultElement["message"] = "device capabilities"
                     self.resultElement["status"] = 0
                     self.resultElement["id"] = self.uid
@@ -523,16 +519,6 @@ class atsDriver: XCTestCase {
         
         // Run event loop
         loop.runForever()
-    }
-    
-    func setupDriverSize() {
-        let screenNativeBounds = XCUIScreen.main.screenshot().image
-        if(Double(screenNativeBounds.size.height) > self.maxHeight) {
-            self.ratioScreen = self.maxHeight / self.deviceHeight
-        }
-        
-        self.deviceWidth = Double(screenNativeBounds.size.width) * self.ratioScreen
-        self.deviceHeight = Double(screenNativeBounds.size.height) * self.ratioScreen
     }
     
     func matchingStrings(input: String, regex: String) -> [[String]] {
@@ -808,14 +794,22 @@ class atsDriver: XCTestCase {
         app.launchEnvironment["ENVOY_BASEURL"] = "http://localhost:\(self.port)"
     }
     
-    func driverInfoBase() {
+    func driverInfoBase(applyRatio: Bool) {
+        let screenNativeBounds = XCUIScreen.main.screenshot().image
+        if(Double(screenNativeBounds.size.height) > self.maxHeight) {
+            self.ratioScreen = self.maxHeight / Double(screenNativeBounds.size.height)
+        }
+        
+        self.deviceWidth = Double(screenNativeBounds.size.width) * self.ratioScreen
+        self.deviceHeight = Double(screenNativeBounds.size.height) * self.ratioScreen
+        
         self.resultElement["os"] = "ios"
         self.resultElement["driverVersion"] = "1.0.0"
         self.resultElement["systemName"] = model + " - " + osVersion
-        self.resultElement["deviceWidth"] = self.deviceWidth
-        self.resultElement["deviceHeight"] = self.deviceHeight
-        self.resultElement["channelWidth"] = self.deviceWidth
-        self.resultElement["channelHeight"] = self.deviceHeight
+        self.resultElement["deviceWidth"] = applyRatio ? self.deviceWidth : screenNativeBounds.size.width
+        self.resultElement["deviceHeight"] = applyRatio ? self.deviceHeight : screenNativeBounds.size.height
+        self.resultElement["channelWidth"] = applyRatio ? self.deviceWidth : screenNativeBounds.size.width
+        self.resultElement["channelHeight"] = applyRatio ? self.deviceHeight : screenNativeBounds.size.height
         self.resultElement["channelX"] = 0
         self.resultElement["channelY"] = 0
     }
