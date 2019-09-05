@@ -602,6 +602,11 @@ class atsDriver: XCTestCase {
                         }
                     }
                     
+                    var coordinateIndexes = 2
+                    if(splittedLine[2].contains("pid:")) {
+                        coordinateIndexes += 1
+                    }
+                    
                     
                     var attr: [String: String] = [String: String]()
                     
@@ -654,10 +659,10 @@ class atsDriver: XCTestCase {
                     attr["numeric"] = "false"
                     attr["value"] = value
                     
-                    let x = Double(self.cleanString(input: String(splittedLine[2]))) as! Double
-                    let y = Double(self.cleanString(input: String(splittedLine[3]))) as! Double
-                    let width = Double(self.cleanString(input: String(splittedLine[4]))) as! Double
-                    let height = Double(self.cleanString(input: String(splittedLine[5]))) as! Double
+                    let x = Double(self.cleanString(input: String(splittedLine[coordinateIndexes]))) as! Double
+                    let y = Double(self.cleanString(input: String(splittedLine[coordinateIndexes+1]))) as! Double
+                    let width = Double(self.cleanString(input: String(splittedLine[coordinateIndexes+2]))) as! Double
+                    let height = Double(self.cleanString(input: String(splittedLine[coordinateIndexes+3]))) as! Double
                     
                     tableToReturn.append(UIElement(
                         id: levelUID,
