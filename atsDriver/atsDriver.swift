@@ -437,13 +437,24 @@ class atsDriver: XCTestCase {
                 case ActionsEnum.APP.rawValue:
                     if(parameters.count > 1) {
                         if(ActionsEnum.START.rawValue == parameters[0]) {
-                            app = XCUIApplication.init(bundleIdentifier: parameters[1])
-                            self.resultElement["message"] = "start app " + parameters[1]
-                            app.launch()
-                            self.resultElement["status"] = 0
-                            self.resultElement["label"] = app.label
-                            self.resultElement["icon"] = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAC4jAAAuIwF4pT92AAAAB3RJTUUH4wgNCzQS2tg9zgAAABl0RVh0Q29tbWVudABDcmVhdGVkIHdpdGggR0lNUFeBDhcAAAAMSURBVAjXY2DY/QYAAmYBqC0q4zEAAAAASUVORK5CYII="
-                            self.resultElement["version"] = "0.0.0"
+                            if #available(iOS 10.3, *) {
+                                XCUIDevice.shared.siriService.activate(voiceRecognitionText: "Open \(parameters[1])")
+                                app = XCUIApplication.init(bundleIdentifier: parameters[1])
+                            } else {
+                                app = XCUIApplication.init(bundleIdentifier: parameters[1])
+                                app.launch()
+                            }
+                            
+                            if(app.state.rawValue == 4) {
+                                self.resultElement["status"] = 0
+                                self.resultElement["label"] = app.label
+                                self.resultElement["icon"] = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAC4jAAAuIwF4pT92AAAAB3RJTUUH4wgNCzQS2tg9zgAAABl0RVh0Q29tbWVudABDcmVhdGVkIHdpdGggR0lNUFeBDhcAAAAMSURBVAjXY2DY/QYAAmYBqC0q4zEAAAAASUVORK5CYII="
+                                self.resultElement["version"] = "0.0.0"
+                            } else {
+                                self.resultElement["message"] = "App package not found in current device: " + parameters[1]
+                                self.resultElement["status"] = -51
+                                app = nil
+                            }
                         } else {
                             if(ActionsEnum.SWITCH.rawValue == parameters[0]) {
                                 app = XCUIApplication(bundleIdentifier: parameters[1])
