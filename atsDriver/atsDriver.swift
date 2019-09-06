@@ -43,6 +43,7 @@ class atsDriver: XCTestCase {
     var leveledTableCount = 0
     var tcpSocket = socket(AF_INET, SOCK_STREAM, 0)
     var cachedDescription: String = ""
+    let offsetYShift = 33.0
     
     let osVersion = UIDevice.current.systemVersion
     let model = UIDevice.modelName.replacingOccurrences(of: "Simulator ", with: "")
@@ -398,7 +399,10 @@ class atsDriver: XCTestCase {
                             var offSetY = 0.0
                             if(parameters.count > 3) {
                                 offSetX = Double(parameters[2])!
-                                offSetY = Double(parameters[3])! + 33
+                                offSetY = Double(parameters[3])! + self.offsetYShift
+                                if(offSetY > flatElement!.height){
+                                    offSetY = Double(parameters[3])!
+                                }
                             }
                             
                             let calculateX = Double(flatElement!.x ) + offSetX
