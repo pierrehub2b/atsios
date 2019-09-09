@@ -310,6 +310,7 @@ class atsDriver: XCTestCase {
                         description = description.replacingOccurrences(of: "'\n", with: "'⌘")
                             .replacingOccurrences(of: "}}\n", with: "}}⌘")
                             .replacingOccurrences(of: "Disabled\n", with: "Disabled⌘")
+                            .replacingOccurrences(of: "Selected\n", with: "Selected⌘")
                             .replacingOccurrences(of: "\n    ", with: "⌘    ")
                             .replacingOccurrences(of: "\n", with: " ")
                         var descriptionTable = description.split(separator: "⌘")
@@ -334,17 +335,34 @@ class atsDriver: XCTestCase {
                                 leveledTable.append((level, currentLine))
                             }
                         }
-                        
-                        var intervalSinceLastCapture = NSDate().timeIntervalSince1970 - self.lastCapture
-                        if(leveledTable.count == self.flatStruct.count && intervalSinceLastCapture < 2) {
-                            break
-                        }
 
                         if(self.rootNode != nil) {
                             self.captureStruct = self.convertIntoJSONString(arrayObject: self.rootNode!)
                         } else {
                             self.captureStruct = "{}"
                         }
+                        
+                        var firstIndex = 0
+                        var currentLevel = 1
+                        var newLeveledTable = leveledTable
+                        if(app.alerts.count > 0) {
+                            newLeveledTable = [(Int,String)]()
+                            for t in 0...leveledTable.count-1 {
+                                if(leveledTable[t].1.localizedCaseInsensitiveContains("alert")) {
+                                    firstIndex = t
+                                    currentLevel = leveledTable[t].0
+                                    break
+                                }
+                            }
+                            
+                            for t in 0...leveledTable.count-1 {
+                                if((leveledTable[t].0 < currentLevel && t < firstIndex) || t >= firstIndex ) {
+                                    newLeveledTable.append(leveledTable[t])
+                                }
+                            }
+                        }
+                        
+                        
                         let workItem = DispatchWorkItem {
                             let rootNode = UIElement(
                                 id: UUID().uuidString,
@@ -354,7 +372,7 @@ class atsDriver: XCTestCase {
                                 y: 0,
                                 width: self.deviceWidth,
                                 height: self.deviceHeight,
-                                children: self.getChildrens(currentLevel: 1, currentIndex: 0, endedIndex: leveledTable.count-1, leveledTable: leveledTable),
+                                children: self.getChildrens(currentLevel: 1, currentIndex: 0, endedIndex: newLeveledTable.count-1, leveledTable: newLeveledTable),
                                 attributes: [:],
                                 channelY: 0,
                                 channelHeight: self.deviceHeight
@@ -441,15 +459,11 @@ class atsDriver: XCTestCase {
                 case ActionsEnum.APP.rawValue:
                     if(parameters.count > 1) {
                         if(ActionsEnum.START.rawValue == parameters[0]) {
-                            if #available(iOS 10.3, *) {
-                                XCUIDevice.shared.siriService.activate(voiceRecognitionText: "Open \(parameters[1])")
-                                app = XCUIApplication.init(bundleIdentifier: parameters[1])
-                            } else {
-                                app = XCUIApplication.init(bundleIdentifier: parameters[1])
-                                app.launch()
-                            }
+                            app = XCUIApplication.init(bundleIdentifier: parameters[1])
+                            app.launch()
                             
                             if(app.state.rawValue == 4) {
+                                
                                 self.resultElement["status"] = 0
                                 self.resultElement["label"] = app.label
                                 self.resultElement["icon"] = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAC4jAAAuIwF4pT92AAAAB3RJTUUH4wgNCzQS2tg9zgAAABl0RVh0Q29tbWVudABDcmVhdGVkIHdpdGggR0lNUFeBDhcAAAAMSURBVAjXY2DY/QYAAmYBqC0q4zEAAAAASUVORK5CYII="
