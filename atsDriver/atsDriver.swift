@@ -117,7 +117,6 @@ class atsDriver: XCTestCase {
     func addNewConnection(socket: Socket, currentConnection: (bytesRead: Int, address: Socket.Address?)) {
         let bufferSize = 4000
         var offset = 0
-        var index: UInt8 = 0
         
         do {
             let workItem = DispatchWorkItem {
@@ -127,7 +126,7 @@ class atsDriver: XCTestCase {
             DispatchQueue.init(label: "getImg").async(execute: workItem)
             workItem.wait()
             
-            var img = self.imgView
+            let img = self.imgView
             if(img != nil) {
                 repeat {
                     let thisChunkSize = ((img!.count - offset) > bufferSize) ? bufferSize : (img!.count - offset);
@@ -136,8 +135,8 @@ class atsDriver: XCTestCase {
                     let uint32Offset = UInt32(offset - thisChunkSize)
                     let uint32RemainingData = UInt32(img!.count - offset)
                     
-                    var offSetTable = self.toByteArrary(value: uint32Offset)
-                    var remainingDataTable = self.toByteArrary(value: uint32RemainingData)
+                    let offSetTable = self.toByteArrary(value: uint32Offset)
+                    let remainingDataTable = self.toByteArrary(value: uint32RemainingData)
                     
                     chunk.insert(contentsOf: offSetTable + remainingDataTable, at: 0)
                     
@@ -159,7 +158,7 @@ class atsDriver: XCTestCase {
     }
     
     func refreshView() {
-        var img = self.imageResize(with: XCUIScreen.main.screenshot().image)
+        let img = self.imageResize(with: XCUIScreen.main.screenshot().image)
         self.imgView = UIImageJPEGRepresentation(img, 0)
     }
     
@@ -313,7 +312,7 @@ class atsDriver: XCTestCase {
                             .replacingOccurrences(of: "Selected\n", with: "Selected⌘")
                             .replacingOccurrences(of: "\n    ", with: "⌘    ")
                             .replacingOccurrences(of: "\n", with: " ")
-                        var descriptionTable = description.split(separator: "⌘")
+                        let descriptionTable = description.split(separator: "⌘")
                         var leveledTable: [(Int,String)] = [(Int,String)]()
                         
                         if(descriptionTable.count < 3) {
@@ -321,10 +320,10 @@ class atsDriver: XCTestCase {
                         }
                         for index in 0...descriptionTable.count-3 {
                             //no traitment of line that are not reference composants
-                            var currentLine = String(descriptionTable[index])
+                            let currentLine = String(descriptionTable[index])
                             var blankSpacesAtStart = 0
-                            for char in currentLine.characters.indices {
-                                if(currentLine[char] == " ") {
+                            for char in currentLine {
+                                if(char == " ") {
                                     blankSpacesAtStart += 1
                                 } else {
                                     break
@@ -572,11 +571,11 @@ class atsDriver: XCTestCase {
     }
     
     func getFlatStruct(rootNode: UIElement) -> [String: Frame] {
-        var frame = Frame(x: rootNode.x, y: rootNode.y, width: rootNode.width, height: rootNode.height)
+        let frame = Frame(x: rootNode.x, y: rootNode.y, width: rootNode.width, height: rootNode.height)
         var currentFlatStruct: [String:Frame] = [:]
         currentFlatStruct[rootNode.id] = frame
         for child in rootNode.children! {
-            var c = self.getFlatStruct(rootNode: child)
+            let c = self.getFlatStruct(rootNode: child)
             currentFlatStruct = currentFlatStruct.merging(c)
             { (current, _) in current }
         }
@@ -646,22 +645,22 @@ class atsDriver: XCTestCase {
                     let pattern = "'(.*?)'"
                     for str in splittedLine {
                         if(str.contains("identifier")) {
-                            var currentIdentifier = (self.matchingStrings(input: String(str), regex: pattern).first?[1])!
+                            let currentIdentifier = (self.matchingStrings(input: String(str), regex: pattern).first?[1])!
                             identifier = currentIdentifier.components(separatedBy: CharacterSet.symbols).joined()
                         }
                         if(str.contains("label")) {
-                            var currentLabel = str.replacingOccurrences(of: "label:", with: "").replacingOccurrences(of: "'", with: "").trimmingCharacters(in: NSCharacterSet.whitespaces)
+                            let currentLabel = str.replacingOccurrences(of: "label:", with: "").replacingOccurrences(of: "'", with: "").trimmingCharacters(in: NSCharacterSet.whitespaces)
                             label = currentLabel.components(separatedBy: CharacterSet.symbols).joined()
                         }
                         if(str.contains("placeholderValue")) {
-                            var currentPlaceHolder = (self.matchingStrings(input: String(str), regex: pattern).first?[1])!
+                            let currentPlaceHolder = (self.matchingStrings(input: String(str), regex: pattern).first?[1])!
                             placeHolder = currentPlaceHolder.components(separatedBy: CharacterSet.symbols).joined()
                         }
                         if(str.contains("value")) {
-                            var valueTable = str.split(separator: ":")
+                            let valueTable = str.split(separator: ":")
                             if(valueTable.count == 2) {
                                 let val = valueTable[1]
-                                var currentValue = val.trimmingCharacters(in: .whitespacesAndNewlines)
+                                let currentValue = val.trimmingCharacters(in: .whitespacesAndNewlines)
                                 value = currentValue.components(separatedBy: CharacterSet.symbols).joined()
                             }
                         }
@@ -688,10 +687,10 @@ class atsDriver: XCTestCase {
                     attr["numeric"] = "false"
                     attr["value"] = value
                     
-                    let x = Double(self.cleanString(input: String(splittedLine[coordinateIndexes]))) as! Double
-                    let y = Double(self.cleanString(input: String(splittedLine[coordinateIndexes+1]))) as! Double
-                    let width = Double(self.cleanString(input: String(splittedLine[coordinateIndexes+2]))) as! Double
-                    let height = Double(self.cleanString(input: String(splittedLine[coordinateIndexes+3]))) as! Double
+                    let x = Double(self.cleanString(input: String(splittedLine[coordinateIndexes])))!
+                    let y = Double(self.cleanString(input: String(splittedLine[coordinateIndexes+1])))!
+                    let width = Double(self.cleanString(input: String(splittedLine[coordinateIndexes+2])))!
+                    let height = Double(self.cleanString(input: String(splittedLine[coordinateIndexes+3])))!
                     
                     tableToReturn.append(UIElement(
                         id: levelUID,
@@ -716,7 +715,7 @@ class atsDriver: XCTestCase {
     func getAppInfo() -> String {
         if(app != nil) {
             let pattern = "'(.*?)'"
-            var packageName = self.matchingStrings(input: String(app.description), regex: pattern).first?[1]
+            let packageName = self.matchingStrings(input: String(app.description), regex: pattern).first?[1]
             var informations: [String:String] = [:]
             informations["packageName"] = packageName
             informations["activity"] = getStateStringValue(rawValue: app.state.rawValue)
@@ -804,7 +803,7 @@ class atsDriver: XCTestCase {
     func getQueryStringParameter(query_string: String, param: String) -> String {
         let params = query_string.components(separatedBy: "&")
         for item in params {
-            var currentParam = item.components(separatedBy: "=")
+            let currentParam = item.components(separatedBy: "=")
             if(currentParam.count != 2) { return "" }
             if(currentParam[0] == param) {
                 return currentParam[1]
