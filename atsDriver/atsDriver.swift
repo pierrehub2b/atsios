@@ -344,11 +344,11 @@ class atsDriver: XCTestCase {
                         var currentLevel = 1
                         var newLeveledTable = leveledTable
                         self.isAlert = false
-                        if(app.alerts.count > 0 || app.collectionViews.count > 0) {
+                        if(app.alerts.count > 0) {
                             newLeveledTable = [(Int,String)]()
                             self.isAlert = true
-                            for t in 0...leveledTable.count-1 { //CollectionView
-                                if(leveledTable[t].1.localizedCaseInsensitiveContains("alert") || leveledTable[t].1.localizedCaseInsensitiveContains("collectionview")) {
+                            for t in 0...leveledTable.count-1 {
+                                if(leveledTable[t].1.localizedCaseInsensitiveContains("alert")) {
                                     firstIndex = t
                                     currentLevel = leveledTable[t].0
                                     break
@@ -597,7 +597,7 @@ class atsDriver: XCTestCase {
         var currentArchi: [UIElement] = [UIElement]()
         var currentNode = rootNode
         currentNode.children = []
-        if(currentNode.tag != "Other" && currentNode.tag != "Alert" && currentNode.tag != "CollectionView") {
+        if(currentNode.tag != "Other" && currentNode.tag != "Alert") {
             currentArchi.append(currentNode)
         }
         
