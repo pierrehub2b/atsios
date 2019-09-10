@@ -44,7 +44,6 @@ class atsDriver: XCTestCase {
     var tcpSocket = socket(AF_INET, SOCK_STREAM, 0)
     var cachedDescription: String = ""
     let offsetYShift = 33.0
-    
     let osVersion = UIDevice.current.systemVersion
     let model = UIDevice.modelName.replacingOccurrences(of: "Simulator ", with: "")
     let simulator = UIDevice.modelName.range(of: "Simulator", options: .caseInsensitive) != nil
@@ -54,6 +53,7 @@ class atsDriver: XCTestCase {
     var deviceHeight = 1.0
     let maxHeight = 860.0
     var ratioScreen = 1.0
+    var isAlert = false
     
     var continueExecution = true
     
@@ -69,7 +69,6 @@ class atsDriver: XCTestCase {
     override func setUp() {
         super.setUp()
         continueAfterFailure = true
-        
         udpThread.async {
             self.udpStart()
         }
@@ -344,12 +343,12 @@ class atsDriver: XCTestCase {
                         var firstIndex = 0
                         var currentLevel = 1
                         var newLeveledTable = leveledTable
-                        var isAlert = false
-                        if(app.alerts.count > 0) {
+                        self.isAlert = false
+                        if(app.alerts.count > 0 || app.collectionViews.count > 0) {
                             newLeveledTable = [(Int,String)]()
-                            isAlert = true
-                            for t in 0...leveledTable.count-1 {
-                                if(leveledTable[t].1.localizedCaseInsensitiveContains("alert")) {
+                            self.isAlert = true
+                            for t in 0...leveledTable.count-1 { //CollectionView
+                                if(leveledTable[t].1.localizedCaseInsensitiveContains("alert") || leveledTable[t].1.localizedCaseInsensitiveContains("collectionview")) {
                                     firstIndex = t
                                     currentLevel = leveledTable[t].0
                                     break
@@ -380,7 +379,7 @@ class atsDriver: XCTestCase {
                             )
                             
                             self.flatStruct = self.getFlatStruct(rootNode: rootNode)
-                            if(isAlert) {
+                            if(self.isAlert) {
                                 var flatArchi: [UIElement] = [UIElement]()
                                 var root = rootNode
                                 root.children = []
@@ -598,7 +597,7 @@ class atsDriver: XCTestCase {
         var currentArchi: [UIElement] = [UIElement]()
         var currentNode = rootNode
         currentNode.children = []
-        if(currentNode.tag != "Other" && currentNode.tag != "Alert") {
+        if(currentNode.tag != "Other" && currentNode.tag != "Alert" && currentNode.tag != "CollectionView") {
             currentArchi.append(currentNode)
         }
         
@@ -763,9 +762,18 @@ class atsDriver: XCTestCase {
     }
     
     func tapCoordinate(at xCoordinate: Double, and yCoordinate: Double) {
-        let normalized = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
-        let coordinate = normalized.withOffset(CGVector(dx: xCoordinate, dy: yCoordinate))
-        coordinate.tap()
+        if(self.isAlert) {
+            let alertBox = app.alerts.firstMatch
+            let x = Double(alertBox.frame.minX)
+            let y = Double(alertBox.frame.minY)
+            let normalized = app.windows.alerts.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
+            let coordinate = normalized.withOffset(CGVector(dx: xCoordinate - x, dy: yCoordinate - y))
+            coordinate.tap()
+        } else {
+            let normalized = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
+            let coordinate = normalized.withOffset(CGVector(dx: xCoordinate, dy: yCoordinate))
+            coordinate.tap()
+        }
     }
     
     func retrieveElement(parameter: String, field: String) -> XCUIElement? {
