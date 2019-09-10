@@ -344,8 +344,10 @@ class atsDriver: XCTestCase {
                         var firstIndex = 0
                         var currentLevel = 1
                         var newLeveledTable = leveledTable
+                        var isAlert = false
                         if(app.alerts.count > 0) {
                             newLeveledTable = [(Int,String)]()
+                            isAlert = true
                             for t in 0...leveledTable.count-1 {
                                 if(leveledTable[t].1.localizedCaseInsensitiveContains("alert")) {
                                     firstIndex = t
@@ -378,13 +380,23 @@ class atsDriver: XCTestCase {
                             )
                             
                             self.flatStruct = self.getFlatStruct(rootNode: rootNode)
-                            self.captureStruct = self.convertIntoJSONString(arrayObject: rootNode)
+                            if(isAlert) {
+                                var flatArchi: [UIElement] = [UIElement]()
+                                var root = rootNode
+                                root.children = []
+                                for node in rootNode.children! {
+                                    root.children! += self.flatArchitecture(rootNode: node)
+                                }
+                                flatArchi.append(root)
+                                self.captureStruct = self.convertIntoJSONString(arrayObject: root)
+                            } else {
+                                self.captureStruct = self.convertIntoJSONString(arrayObject: rootNode)
+                            }
                             self.rootNode = rootNode
                             self.lastCapture = NSDate().timeIntervalSince1970
                         }
                         self.domThread.async(execute: workItem)
                         workItem.wait()
-                        
                     }
                     
                     break
@@ -580,6 +592,20 @@ class atsDriver: XCTestCase {
             { (current, _) in current }
         }
         return currentFlatStruct
+    }
+    
+    func flatArchitecture(rootNode: UIElement) -> [UIElement] {
+        var currentArchi: [UIElement] = [UIElement]()
+        var currentNode = rootNode
+        currentNode.children = []
+        if(currentNode.tag != "Other" && currentNode.tag != "Alert") {
+            currentArchi.append(currentNode)
+        }
+        
+        for child in rootNode.children! {
+            currentArchi += self.flatArchitecture(rootNode: child)
+        }
+        return currentArchi
     }
     
     func getChildrens(currentLevel: Int, currentIndex: Int, endedIndex: Int, leveledTable: [(Int,String)]) -> [UIElement] {
