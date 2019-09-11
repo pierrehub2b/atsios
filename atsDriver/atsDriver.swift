@@ -344,23 +344,23 @@ class atsDriver: XCTestCase {
                         var currentLevel = 1
                         var newLeveledTable = leveledTable
                         self.isAlert = false
-                        if(app.alerts.count > 0) {
-                            newLeveledTable = [(Int,String)]()
-                            self.isAlert = true
-                            for t in 0...leveledTable.count-1 {
-                                if(leveledTable[t].1.localizedCaseInsensitiveContains("alert")) {
-                                    firstIndex = t
-                                    currentLevel = leveledTable[t].0
-                                    break
-                                }
-                            }
-                            
-                            for t in 0...leveledTable.count-1 {
-                                if((leveledTable[t].0 < currentLevel && t < firstIndex) || t >= firstIndex ) {
-                                    newLeveledTable.append(leveledTable[t])
-                                }
-                            }
-                        }
+//                        if(app.alerts.count > 0) {
+//                            newLeveledTable = [(Int,String)]()
+//                            self.isAlert = true
+//                            for t in 0...leveledTable.count-1 {
+//                                if(leveledTable[t].1.localizedCaseInsensitiveContains("alert")) {
+//                                    firstIndex = t
+//                                    currentLevel = leveledTable[t].0
+//                                    break
+//                                }
+//                            }
+//
+//                            for t in 0...leveledTable.count-1 {
+//                                if((leveledTable[t].0 < currentLevel && t < firstIndex) || t >= firstIndex ) {
+//                                    newLeveledTable.append(leveledTable[t])
+//                                }
+//                            }
+//                        }
                         
                         
                         let workItem = DispatchWorkItem {
@@ -444,18 +444,7 @@ class atsDriver: XCTestCase {
                                 if(ActionsEnum.SWIPE.rawValue == parameters[1]) {
                                     let directionX = Double(parameters[4]) ?? 0.0
                                     let directionY = Double(parameters[5]) ?? 0.0
-                                    if(directionX > 0.0) {
-                                        app.swipeRight()
-                                    }
-                                    if(directionX < 0.0) {
-                                        app.swipeLeft()
-                                    }
-                                    if(directionY > 0.0) {
-                                        app.swipeUp()
-                                    }
-                                    if(directionY < 0.0) {
-                                        app.swipeDown()
-                                    }
+                                    self.swipeCoordinate(x: calculateX, y: calculateY, swipeX: directionX, swipeY: directionY)
                                     self.resultElement["status"] = 0
                                     self.resultElement["message"] = "swipe element"
                                 }
@@ -774,6 +763,18 @@ class atsDriver: XCTestCase {
             let coordinate = normalized.withOffset(CGVector(dx: xCoordinate, dy: yCoordinate))
             coordinate.tap()
         }
+    }
+    
+    func swipeCoordinate(x xCoordinate: Double, y yCoordinate: Double, swipeX xSwipe: Double, swipeY ySwipe: Double) {
+        let pressDuration : TimeInterval = 0.05
+        
+        let startNormalized = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
+        let startCoordinate = startNormalized.withOffset(CGVector(dx: xCoordinate, dy: yCoordinate))
+        
+        let endNormalized = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
+        let endCoordinate = endNormalized.withOffset(CGVector(dx: (xCoordinate+xSwipe), dy: (yCoordinate + ySwipe)))
+        
+        startCoordinate.press(forDuration: pressDuration, thenDragTo: endCoordinate)
     }
     
     func retrieveElement(parameter: String, field: String) -> XCUIElement? {
