@@ -51,7 +51,7 @@ class atsDriver: XCTestCase {
     let bluetoothName = UIDevice.current.name
     var deviceWidth = 1.0
     var deviceHeight = 1.0
-    let maxHeight = 860.0
+    let maxHeight = 800.0
     var ratioScreen = 1.0
     var isAlert = false
     
@@ -302,7 +302,8 @@ class atsDriver: XCTestCase {
                     
                     var description = app.debugDescription
                     
-                    if(self.cachedDescription != description){
+                    if(self.cachedDescription != description
+                        && self.cachedDescription.split(separator: "\n").count != description.split(separator: "\n").count){
                         self.cachedDescription = description;
                         
                         description = description.replacingOccurrences(of: "'\n", with: "'⌘")
@@ -317,6 +318,7 @@ class atsDriver: XCTestCase {
                         if(descriptionTable.count < 3) {
                             break
                         }
+                        self.isAlert = false
                         for index in 0...descriptionTable.count-3 {
                             //no traitment of line that are not reference composants
                             let currentLine = String(descriptionTable[index])
@@ -330,6 +332,10 @@ class atsDriver: XCTestCase {
                             }
                             let level = (blankSpacesAtStart / 2) - 1
                             if(level > 0) {
+                                let startString = currentLine.trimmingCharacters(in: NSCharacterSet.whitespaces)
+                                if(startString.starts(with: "Alert")) {
+                                    self.isAlert = true
+                                }
                                 leveledTable.append((level, currentLine))
                             }
                         }
@@ -343,25 +349,24 @@ class atsDriver: XCTestCase {
                         var firstIndex = 0
                         var currentLevel = 1
                         var newLeveledTable = leveledTable
-                        self.isAlert = false
-//                        if(app.alerts.count > 0) {
-//                            newLeveledTable = [(Int,String)]()
-//                            self.isAlert = true
-//                            for t in 0...leveledTable.count-1 {
-//                                if(leveledTable[t].1.localizedCaseInsensitiveContains("alert")) {
-//                                    firstIndex = t
-//                                    currentLevel = leveledTable[t].0
-//                                    break
-//                                }
-//                            }
-//
-//                            for t in 0...leveledTable.count-1 {
-//                                if((leveledTable[t].0 < currentLevel && t < firstIndex) || t >= firstIndex ) {
-//                                    newLeveledTable.append(leveledTable[t])
-//                                }
-//                            }
-//                        }
+                        if(self.isAlert) {
+                           newLeveledTable = [(Int,String)]()
+                           for t in 0...leveledTable.count-1 {
+                               if(leveledTable[t].1.localizedCaseInsensitiveContains("alert")) {
+                                   firstIndex = t
+                                   currentLevel = leveledTable[t].0
+                                   break
+                               }
+                           }
+
+                           for t in 0...leveledTable.count-1 {
+                               if((leveledTable[t].0 < currentLevel && t < firstIndex) || t >= firstIndex ) {
+                                   newLeveledTable.append(leveledTable[t])
+                               }
+                           }
+                       }
                         
+                        let parentFrame = Frame(x: 0, y: 0, width: self.deviceWidth, height: self.deviceHeight)
                         
                         let workItem = DispatchWorkItem {
                             let rootNode = UIElement(
@@ -372,7 +377,7 @@ class atsDriver: XCTestCase {
                                 y: 0,
                                 width: self.deviceWidth,
                                 height: self.deviceHeight,
-                                children: self.getChildrens(currentLevel: 1, currentIndex: 0, endedIndex: newLeveledTable.count-1, leveledTable: newLeveledTable),
+                                children: self.getChildrens(currentLevel: 1, currentIndex: 0, endedIndex: newLeveledTable.count-1, leveledTable: newLeveledTable, parentFrame: parentFrame),
                                 attributes: [:],
                                 channelY: 0,
                                 channelHeight: self.deviceHeight
@@ -408,12 +413,17 @@ class atsDriver: XCTestCase {
                             break
                         }
                         
+                        let elementX = flatElement!.x/self.ratioScreen
+                        let elementY = flatElement!.y/self.ratioScreen
+                        let elementWidth = flatElement!.width/self.ratioScreen
+                        let elementHeight = flatElement!.height/self.ratioScreen
+                        
                         if(ActionsEnum.INPUT.rawValue == parameters[1]) {
                             let text = parameters[2]
                             if(text == ActionsEnum.EMPTY.rawValue) {
-                                self.tapCoordinate(at: flatElement!.x + (flatElement!.width * 0.90), and: flatElement!.y + (flatElement!.height / 2))
+                                self.tapCoordinate(at: elementX + (elementWidth * 0.90), and: elementY + (elementHeight / 2))
                             } else {
-                                self.tapCoordinate(at: flatElement!.x, and: flatElement!.y)
+                                self.tapCoordinate(at: elementX, and: elementHeight)
                                 self.resultElement["status"] = 0
                                 if(app.keyboards.count > 0) {
                                     app.typeText(text)
@@ -428,13 +438,13 @@ class atsDriver: XCTestCase {
                             if(parameters.count > 3) {
                                 offSetX = Double(parameters[2])!
                                 offSetY = Double(parameters[3])! + self.offsetYShift
-                                if(offSetY > flatElement!.height){
+                                if(offSetY > elementHeight){
                                     offSetY = Double(parameters[3])!
                                 }
                             }
                             
-                            let calculateX = Double(flatElement!.x ) + offSetX
-                            let calculateY = Double(flatElement!.y ) + offSetY
+                            let calculateX = elementX + offSetX
+                            let calculateY = elementY + offSetY
                             
                             if(ActionsEnum.TAP.rawValue == parameters[1]) {
                                 self.tapCoordinate(at: calculateX, and: calculateY)
@@ -442,8 +452,8 @@ class atsDriver: XCTestCase {
                                 self.resultElement["message"] = "tap on element"
                             } else {
                                 if(ActionsEnum.SWIPE.rawValue == parameters[1]) {
-                                    let directionX = Double(parameters[4]) ?? 0.0
-                                    let directionY = Double(parameters[5]) ?? 0.0
+                                    let directionX = (Double(parameters[4]) ?? 0.0)/self.ratioScreen
+                                    let directionY = (Double(parameters[5]) ?? 0.0)/self.ratioScreen
                                     self.swipeCoordinate(x: calculateX, y: calculateY, swipeX: directionX, swipeY: directionY)
                                     self.resultElement["status"] = 0
                                     self.resultElement["message"] = "swipe element"
@@ -596,7 +606,7 @@ class atsDriver: XCTestCase {
         return currentArchi
     }
     
-    func getChildrens(currentLevel: Int, currentIndex: Int, endedIndex: Int, leveledTable: [(Int,String)]) -> [UIElement] {
+    func getChildrens(currentLevel: Int, currentIndex: Int, endedIndex: Int, leveledTable: [(Int,String)], parentFrame: Frame) -> [UIElement] {
         var tableToReturn: [UIElement] = [UIElement]()
         if(currentIndex < leveledTable.count-1) {
             for line in currentIndex...leveledTable.count-1 {
@@ -701,20 +711,38 @@ class atsDriver: XCTestCase {
                     attr["numeric"] = "false"
                     attr["value"] = value
                     
-                    let x = Double(self.cleanString(input: String(splittedLine[coordinateIndexes])))!
-                    let y = Double(self.cleanString(input: String(splittedLine[coordinateIndexes+1])))!
-                    let width = Double(self.cleanString(input: String(splittedLine[coordinateIndexes+2])))!
-                    let height = Double(self.cleanString(input: String(splittedLine[coordinateIndexes+3])))!
+                    var x = Double(self.cleanString(input: String(splittedLine[coordinateIndexes])))! * self.ratioScreen
+                    var y = Double(self.cleanString(input: String(splittedLine[coordinateIndexes+1])))! * self.ratioScreen
+                    var width = Double(self.cleanString(input: String(splittedLine[coordinateIndexes+2])))! * self.ratioScreen
+                    var height = Double(self.cleanString(input: String(splittedLine[coordinateIndexes+3])))! * self.ratioScreen
+                    
+                    if((y + height) > (parentFrame.height + parentFrame.y)) {
+                        let reduceHeight = (parentFrame.height + parentFrame.y) - height - y
+                        height = height + reduceHeight
+                    }
+                    if((x + width) > (parentFrame.width + parentFrame.x)) {
+                        let reduceWidth = (parentFrame.width + parentFrame.x) - width - x
+                        width = width + reduceWidth
+                    }
+                    
+                    if(y < parentFrame.y) {
+                        y = parentFrame.y
+                    }
+                    if(x < parentFrame.x) {
+                        x = parentFrame.x
+                    }
+                    
+                    let currentParentFrame = Frame(x: x, y: y, width: width, height: height)
                     
                     tableToReturn.append(UIElement(
                         id: levelUID,
                         tag: self.cleanString(input: String(splittedLine[0])),
                         clickable: true,
-                        x: x * self.ratioScreen,
-                        y: y * self.ratioScreen,
-                        width: width * self.ratioScreen,
-                        height: height * self.ratioScreen,
-                        children: self.getChildrens(currentLevel: currentLevel+1, currentIndex: line+1, endedIndex: endIn, leveledTable: leveledTable),
+                        x: x,
+                        y: y,
+                        width: width,
+                        height: height,
+                        children: self.getChildrens(currentLevel: currentLevel+1, currentIndex: line+1, endedIndex: endIn, leveledTable: leveledTable, parentFrame: currentParentFrame),
                         attributes: attr,
                         channelY: nil,
                         channelHeight: nil
@@ -752,10 +780,10 @@ class atsDriver: XCTestCase {
     
     func tapCoordinate(at xCoordinate: Double, and yCoordinate: Double) {
         if(self.isAlert) {
-            let alertBox = app.alerts.firstMatch
+            let alertBox = app.windows.alerts.firstMatch
             let x = Double(alertBox.frame.minX)
             let y = Double(alertBox.frame.minY)
-            let normalized = app.windows.alerts.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
+            let normalized = alertBox.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
             let coordinate = normalized.withOffset(CGVector(dx: xCoordinate - x, dy: yCoordinate - y))
             coordinate.tap()
         } else {
@@ -856,9 +884,7 @@ class atsDriver: XCTestCase {
     
     func driverInfoBase(applyRatio: Bool) {
         let screenNativeBounds = XCUIScreen.main.screenshot().image
-        if(Double(screenNativeBounds.size.height) > self.maxHeight) {
-            self.ratioScreen = self.maxHeight / Double(screenNativeBounds.size.height)
-        }
+        self.ratioScreen = self.maxHeight / Double(screenNativeBounds.size.height)
         
         self.deviceWidth = Double(screenNativeBounds.size.width) * self.ratioScreen
         self.deviceHeight = Double(screenNativeBounds.size.height) * self.ratioScreen
