@@ -655,7 +655,7 @@ class atsDriver: XCTestCase {
                     }
                     
                     var coordinateIndexes = 2
-                    if(splittedLine[2].contains("pid:")) {
+                    if(splittedLine.count > 2 && splittedLine[2].contains("pid:")) {
                         coordinateIndexes += 1
                     }
                     
