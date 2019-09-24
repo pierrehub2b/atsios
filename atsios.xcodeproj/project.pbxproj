@@ -519,12 +519,14 @@
 			baseConfigurationReference = 89F6EEB0CA1DB5071991C47F /* Pods-atsDriver.debug.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
+				AUTOMATIC_PORT = true;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				CUSTOM_PORT = 8080;
 				DEVELOPMENT_TEAM = X58W5PF95D;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"CUSTOM_PORT=$(CUSTOM_PORT)",
+					"AUTOMATIC_PORT=$(AUTOMATIC_PORT)",
 					"$(inherited)",
 					"COCOAPODS=1",
 				);
@@ -548,12 +550,14 @@
 			baseConfigurationReference = 29A033C72F092427CC8F9466 /* Pods-atsDriver.release.xcconfig */;
 			buildSettings = {
 				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = "$(inherited)";
+				AUTOMATIC_PORT = true;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				CUSTOM_PORT = 8080;
 				DEVELOPMENT_TEAM = X58W5PF95D;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"CUSTOM_PORT=$(CUSTOM_PORT)",
+					"AUTOMATIC_PORT=$(AUTOMATIC_PORT)",
 					"$(inherited)",
 					"COCOAPODS=1",
 				);
