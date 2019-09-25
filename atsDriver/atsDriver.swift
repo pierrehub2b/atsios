@@ -73,14 +73,26 @@ class atsDriver: XCTestCase {
             self.udpStart()
         }
         
+        var customPort = "";
+        let testBundle = Bundle(for: atsDriver.self)
+        if let url = testBundle.url(forResource: "Settings", withExtension: "plist"),
+          let myDict = NSDictionary(contentsOf: url) as? [String:Any] {
+            customPort = myDict["CFCustomPort"].unsafelyUnwrapped as! String;
+        }
+        
         XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
         
-        for i in 8080..<65000 {
-            let (isFree, _) = checkTcpPortForListen(port: UInt16(i))
-            if (isFree == true && i != self.udpPort) {
-                self.port = i
-                break;
-            }
+        print("Custom port ='" + customPort + "'");
+        if(customPort != "") {
+            self.port = Int(customPort)!
+        } else {
+            for i in 8080..<65000 {
+               let (isFree, _) = checkTcpPortForListen(port: UInt16(i))
+               if (isFree == true && i != self.udpPort) {
+                   self.port = i
+                   break;
+               }
+           }
         }
         
         self.setupWebApp()
