@@ -28,7 +28,7 @@ class atsDriver: XCTestCase {
     
     let udpThread = DispatchQueue(label: "udpQueue", qos: .userInitiated)
     var domThread = DispatchQueue(label: "domQueue", qos: .userInitiated)
-    var port = 8080
+    var port = 0
     var currentAppIdentifier: String = ""
     var resultElement: [String: Any] = [:]
     var captureStruct: String = ""
@@ -84,7 +84,12 @@ class atsDriver: XCTestCase {
         
         print("Custom port ='" + customPort + "'");
         if(customPort != "") {
-            self.port = Int(customPort)!
+            let (isFree, _) = checkTcpPortForListen(port: UInt16(customPort)!)
+            if(isFree == true) {
+                self.port = Int(customPort)!
+            } else {
+                return;
+            }
         } else {
             for i in 8080..<65000 {
                let (isFree, _) = checkTcpPortForListen(port: UInt16(i))
@@ -197,7 +202,7 @@ class atsDriver: XCTestCase {
     private func setupWebApp() {
         
         let loop = try! SelectorEventLoop(selector: try! KqueueSelector())
-        
+        print(self.port);
         let server = DefaultHTTPServer(eventLoop: loop, interface: "0.0.0.0", port: self.port) {
             (
             environ: [String: Any],
