@@ -54,6 +54,7 @@ class atsDriver: XCTestCase {
     let maxHeight = 840.0
     var ratioScreen = 1.0
     var isAlert = false
+    var applications:[[String: Any]] = []
     
     var continueExecution = true
     
@@ -100,8 +101,31 @@ class atsDriver: XCTestCase {
            }
         }
         
+        self.setupInstalledApp()
         self.setupWebApp()
         self.setupApp()
+    }
+    
+    func setupInstalledApp(){
+        self.addInstalledApp(label: "Settings", packageName: "com.apple.Preferences", version: "", icon: "");
+        self.addInstalledApp(label: "Contacts", packageName: "com.apple.MobileAddressBook", version: "", icon: "");
+        self.addInstalledApp(label: "News", packageName: "com.apple.news", version: "", icon: "");
+        self.addInstalledApp(label: "Maps", packageName: "com.apple.Maps", version: "", icon: "");
+        self.addInstalledApp(label: "Health", packageName: "com.apple.Health", version: "", icon: "");
+        self.addInstalledApp(label: "Calendar", packageName: "com.apple.mobilecal", version: "", icon: "");
+        self.addInstalledApp(label: "Photos", packageName: "com.apple.mobileslideshow", version: "", icon: "");
+        self.addInstalledApp(label: "Home", packageName: "com.apple.Home", version: "", icon: "");
+        self.addInstalledApp(label: "Files", packageName: "com.apple.DocumentsApp", version: "", icon: "");
+        // TODO add succesfully started app on this device
+    }
+    
+    func addInstalledApp(label:String, packageName:String, version:String, icon:String){
+        var app: [String: Any] = [:]
+        app["label"] = label
+        app["packageName"] = packageName
+        app["version"] = ""
+        app["icon"] = ""
+        applications.append(app)
     }
     
     func udpStart(){
@@ -535,6 +559,7 @@ class atsDriver: XCTestCase {
                     self.resultElement["version"] = self.osVersion
                     self.resultElement["bluetoothName"] = self.bluetoothName
                     self.resultElement["simulator"] = self.simulator
+                    self.resultElement["applications"] = self.applications
                     break
                 default:
                     self.resultElement["status"] = -12
