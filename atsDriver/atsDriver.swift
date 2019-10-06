@@ -107,24 +107,24 @@ class atsDriver: XCTestCase {
     }
     
     func setupInstalledApp(){
-        self.addInstalledApp(label: "Settings", packageName: "com.apple.Preferences", version: "", icon: "");
-        self.addInstalledApp(label: "Contacts", packageName: "com.apple.MobileAddressBook", version: "", icon: "");
-        self.addInstalledApp(label: "News", packageName: "com.apple.news", version: "", icon: "");
-        self.addInstalledApp(label: "Maps", packageName: "com.apple.Maps", version: "", icon: "");
-        self.addInstalledApp(label: "Health", packageName: "com.apple.Health", version: "", icon: "");
-        self.addInstalledApp(label: "Calendar", packageName: "com.apple.mobilecal", version: "", icon: "");
-        self.addInstalledApp(label: "Photos", packageName: "com.apple.mobileslideshow", version: "", icon: "");
-        self.addInstalledApp(label: "Home", packageName: "com.apple.Home", version: "", icon: "");
-        self.addInstalledApp(label: "Files", packageName: "com.apple.DocumentsApp", version: "", icon: "");
+        self.addInstalledApp(label: "Safari", packageName: "com.apple.mobilesafari", version: "", icon:SafariIcon())
+        self.addInstalledApp(label: "Settings", packageName: "com.apple.Preferences", version: "", icon:SettingsIcon());
+        self.addInstalledApp(label: "Contacts", packageName: "com.apple.MobileAddressBook", version: "", icon:AddressIcon());
+        self.addInstalledApp(label: "News", packageName: "com.apple.news", version: "", icon:NewsIcon());
+        self.addInstalledApp(label: "Maps", packageName: "com.apple.Maps", version: "", icon:MapsIcon());
+        self.addInstalledApp(label: "Health", packageName: "com.apple.Health", version: "", icon:HealthIcon());
+        self.addInstalledApp(label: "Calendar", packageName: "com.apple.mobilecal", version: "", icon:CalendarIcon());
+        self.addInstalledApp(label: "Photos", packageName: "com.apple.mobileslideshow", version: "", icon:PhotosIcon());
+        self.addInstalledApp(label: "Files", packageName: "com.apple.DocumentsApp", version: "", icon:DefaultAppIcon());
         // TODO add succesfully started app on this device
     }
-    
+
     func addInstalledApp(label:String, packageName:String, version:String, icon:String){
         var app: [String: Any] = [:]
         app["label"] = label
         app["packageName"] = packageName
         app["version"] = ""
-        app["icon"] = ""
+        app["icon"] = icon
         applications.append(app)
     }
     
