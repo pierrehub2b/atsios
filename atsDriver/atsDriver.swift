@@ -95,7 +95,7 @@ class atsDriver: XCTestCase {
         if !UIDevice.isSimulator {
              XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
         }
-        //XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
+        
         if(customPort != "") {
             let (isFree, _) = checkTcpPortForListen(port: UInt16(customPort)!)
             if(isFree == true) {
@@ -267,7 +267,9 @@ class atsDriver: XCTestCase {
                                 if(app != nil){
                                     app.terminate()
                                     self.continueExecution = false
-                                    XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
+                                    if !UIDevice.isSimulator {
+                                         XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
+                                    }
                                     self.resultElement["status"] = 0
                                     self.resultElement["message"] = "stop ats driver"
                                 }
@@ -275,7 +277,9 @@ class atsDriver: XCTestCase {
                                 if(ActionsEnum.QUIT.rawValue == parameters[0]) {
                                     app.terminate()
                                     self.continueExecution = false
-                                    XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
+                                    if !UIDevice.isSimulator {
+                                         XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
+                                    }
                                     self.resultElement["status"] = 0
                                     self.resultElement["message"] = "close ats driver"
                                 } else if(ActionsEnum.INFO.rawValue == parameters[0]) {
