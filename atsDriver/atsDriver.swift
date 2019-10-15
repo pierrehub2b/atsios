@@ -24,6 +24,12 @@ import Socket
 
 public var app: XCUIApplication!
 
+extension UIDevice {
+    static var isSimulator: Bool {
+        return ProcessInfo.processInfo.environment["SIMULATOR_DEVICE_NAME"] != nil
+    }
+}
+
 class atsDriver: XCTestCase {
     
     let udpThread = DispatchQueue(label: "udpQueue" + UUID().uuidString, qos: .userInitiated)
@@ -86,7 +92,10 @@ class atsDriver: XCTestCase {
             customPort = myDict["CFCustomPort"].unsafelyUnwrapped as! String;
         }
         
-        XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
+        if !UIDevice.isSimulator {
+             XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
+        }
+        //XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
         if(customPort != "") {
             let (isFree, _) = checkTcpPortForListen(port: UInt16(customPort)!)
             if(isFree == true) {
