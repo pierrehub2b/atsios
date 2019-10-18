@@ -37,10 +37,8 @@ class atsDriver: XCTestCase {
     var port = 0
     var currentAppIdentifier: String = ""
     var resultElement: [String: Any] = [:]
-    var captureStruct: String = ""
     var flatStruct: [String: Frame] = [:]
     var thread: Thread! = nil
-    var rootNode: UIElement? = nil
     var udpPort: Int = 47633
     var continueRunningValue = true
     var connectedSockets = [Int32: Socket]()
@@ -127,9 +125,7 @@ class atsDriver: XCTestCase {
         self.addInstalledApp(label: "Health", packageName: "com.apple.Health", version: "", icon:HealthIcon());
         self.addInstalledApp(label: "Calendar", packageName: "com.apple.mobilecal", version: "", icon:CalendarIcon());
         self.addInstalledApp(label: "Photos", packageName: "com.apple.mobileslideshow", version: "", icon:PhotosIcon());
-        self.addInstalledApp(label: "Files", packageName: "com.apple.DocumentsApp", version: "", icon:DefaultAppIcon());
-        // TODO add succesfully started app on this device
-    }
+        self.addInstalledApp(label: "Files", packageName: "com.apple.DocumentsApp", version: "", icon:DefaultAppIcon());    }
 
     func addInstalledApp(label:String, packageName:String, version:String, icon:String){
         var app: [String: Any] = [:]
@@ -313,6 +309,7 @@ class atsDriver: XCTestCase {
                                     self.resultElement["status"] = 0
                                     self.resultElement["message"] = "orientation to landscape mode"
                                 }
+                            
                             } else {
                                 self.resultElement["message"] = "unknow button " + parameters[0]
                                 self.resultElement["status"] = -42
@@ -325,7 +322,7 @@ class atsDriver: XCTestCase {
                     }
                     break
                     
-                case ActionsEnum.CAPTURE2.rawValue:
+                case ActionsEnum.CAPTURE.rawValue:
                     if(app == nil) {
                         self.resultElement["message"] = "no app has been launched"
                         self.resultElement["status"] = -99
@@ -334,129 +331,22 @@ class atsDriver: XCTestCase {
                     
                     self.resultElement["message"] = "root_description"
                     self.resultElement["status"] = 0
+                    self.resultElement["deviceHeight"] = self.deviceHeight
+                    self.resultElement["deviceWidth"] = self.deviceWidth
                     self.resultElement["root"] = app.debugDescription
-                    
-                case ActionsEnum.CAPTURE.rawValue:
-                    if(app == nil) {
-                        self.resultElement["message"] = "no app has been launched"
-                        self.resultElement["status"] = -99
-                        break
-                    }
-                    
-                    var description = app.debugDescription
-                    
-                    if((self.cachedDescription != description
-                        && self.cachedDescription.split(separator: "\n").count != description.split(separator: "\n").count) || self.forceCapture){
-                        self.cachedDescription = description;
-                        self.forceCapture = false;
-                        
-                        description = description.replacingOccurrences(of: "'\n", with: "'⌘")
-                            .replacingOccurrences(of: "}}\n", with: "}}⌘")
-                            .replacingOccurrences(of: "Disabled\n", with: "Disabled⌘")
-                            .replacingOccurrences(of: "Selected\n", with: "Selected⌘")
-                            .replacingOccurrences(of: "\n    ", with: "⌘    ")
-                            .replacingOccurrences(of: "\n", with: " ")
-                        let descriptionTable = description.split(separator: "⌘")
-                        var leveledTable: [(Int,String)] = [(Int,String)]()
-                        
-                        if(descriptionTable.count < 3) {
-                            break
-                        }
-                        self.isAlert = false
-                        for index in 0...descriptionTable.count-3 {
-                            //no traitment of line that are not reference composants
-                            let currentLine = String(descriptionTable[index])
-                            var blankSpacesAtStart = 0
-                            for char in currentLine {
-                                if(char == " ") {
-                                    blankSpacesAtStart += 1
-                                } else {
-                                    break
-                                }
-                            }
-                            let level = (blankSpacesAtStart / 2) - 1
-                            if(level > 0) {
-                                let startString = currentLine.trimmingCharacters(in: NSCharacterSet.whitespaces)
-                                if(startString.starts(with: "Alert")) {
-                                    self.isAlert = true
-                                }
-                                leveledTable.append((level, currentLine))
-                            }
-                        }
-
-                        if(self.rootNode != nil) {
-                            self.captureStruct = self.convertIntoJSONString(arrayObject: self.rootNode!)
-                        } else {
-                            self.captureStruct = "{}"
-                        }
-                        
-                        var firstIndex = 0
-                        var currentLevel = 1
-                        var newLeveledTable = leveledTable
-                        if(self.isAlert) {
-                           newLeveledTable = [(Int,String)]()
-                           for t in 0...leveledTable.count-1 {
-                               if(leveledTable[t].1.localizedCaseInsensitiveContains("alert")) {
-                                   firstIndex = t
-                                   currentLevel = leveledTable[t].0
-                                   break
-                               }
-                           }
-
-                           for t in 0...leveledTable.count-1 {
-                               if((leveledTable[t].0 < currentLevel && t < firstIndex) || t >= firstIndex ) {
-                                   newLeveledTable.append(leveledTable[t])
-                               }
-                           }
-                       }
-                        
-                        let parentFrame = Frame(x: 0, y: 0, width: self.deviceWidth, height: self.deviceHeight)
-                        
-                        let workItem = DispatchWorkItem {
-                            let rootNode = UIElement(
-                                id: UUID().uuidString,
-                                tag: "root",
-                                clickable: false,
-                                x: 0,
-                                y: 0,
-                                width: self.deviceWidth,
-                                height: self.deviceHeight,
-                                children: self.getChildrens(currentLevel: 1, currentIndex: 0, endedIndex: newLeveledTable.count-1, leveledTable: newLeveledTable, parentFrame: parentFrame),
-                                attributes: [:],
-                                channelY: 0,
-                                channelHeight: self.deviceHeight
-                            )
-                            
-                            self.flatStruct = self.getFlatStruct(rootNode: rootNode)
-                            if(self.isAlert) {
-                                var flatArchi: [UIElement] = [UIElement]()
-                                var root = rootNode
-                                root.children = []
-                                for node in rootNode.children! {
-                                    root.children! += self.flatArchitecture(rootNode: node)
-                                }
-                                flatArchi.append(root)
-                                self.captureStruct = self.convertIntoJSONString(arrayObject: root)
-                            } else {
-                                self.captureStruct = self.convertIntoJSONString(arrayObject: rootNode)
-                            }
-                            self.rootNode = rootNode
-                            self.lastCapture = NSDate().timeIntervalSince1970
-                        }
-                        self.domThread.async(execute: workItem)
-                        workItem.wait()
-                    }
-                    
                     break
+                    
+                case ActionsEnum.DOM.rawValue:
+                    /// TODO get and store Dom into flatStruct
+                    break
+                
                 case ActionsEnum.ELEMENT.rawValue:
                     if(parameters.count > 1) {
                         let flatElement = self.flatStruct[parameters[0]]
                         if(flatElement == nil) {
                             self.resultElement["status"] = -21
                             self.resultElement["message"] = "missing element"
-                            break
                         }
-                        
                         let elementX = flatElement!.x/self.ratioScreen
                         let elementY = flatElement!.y/self.ratioScreen
                         let elementWidth = flatElement!.width/self.ratioScreen
@@ -572,17 +462,13 @@ class atsDriver: XCTestCase {
                 }
             }
             
-            if(action == ActionsEnum.CAPTURE.rawValue) {
-                sendBody(Data(self.captureStruct.utf8))
-            } else {
-                if let theJSONData = try?  JSONSerialization.data(
-                    withJSONObject: self.resultElement,
-                    options: []
-                    ),
-                    let theJSONText = String(data: theJSONData,
-                                             encoding: String.Encoding.utf8) {
-                    sendBody(Data(theJSONText.utf8))
-                }
+            if let theJSONData = try?  JSONSerialization.data(
+                withJSONObject: self.resultElement,
+                options: []
+                ),
+                let theJSONText = String(data: theJSONData,
+                                         encoding: String.Encoding.utf8) {
+                sendBody(Data(theJSONText.utf8))
             }
             sendBody(Data())
         }
@@ -627,32 +513,6 @@ class atsDriver: XCTestCase {
             range: NSRange(location: 0, length: nsString.length),
             withTemplate: "")
         return modifiedString.components(separatedBy: stop)
-    }
-    
-    func getFlatStruct(rootNode: UIElement) -> [String: Frame] {
-        let frame = Frame(x: rootNode.x, y: rootNode.y, width: rootNode.width, height: rootNode.height)
-        var currentFlatStruct: [String:Frame] = [:]
-        currentFlatStruct[rootNode.id] = frame
-        for child in rootNode.children! {
-            let c = self.getFlatStruct(rootNode: child)
-            currentFlatStruct = currentFlatStruct.merging(c)
-            { (current, _) in current }
-        }
-        return currentFlatStruct
-    }
-    
-    func flatArchitecture(rootNode: UIElement) -> [UIElement] {
-        var currentArchi: [UIElement] = [UIElement]()
-        var currentNode = rootNode
-        currentNode.children = []
-        if(currentNode.tag != "Other" && currentNode.tag != "Alert") {
-            currentArchi.append(currentNode)
-        }
-        
-        for child in rootNode.children! {
-            currentArchi += self.flatArchitecture(rootNode: child)
-        }
-        return currentArchi
     }
     
     func getChildrens(currentLevel: Int, currentIndex: Int, endedIndex: Int, leveledTable: [(Int,String)], parentFrame: Frame) -> [UIElement] {
@@ -936,18 +796,19 @@ class atsDriver: XCTestCase {
         let screenScale = UIScreen.main.nativeScale
         let screenSize = CGSize(width: screenBounds.size.width * screenScale, height: screenBounds.size.height * screenScale)
         
-        if(applyRatio) {
-            let screenNativeBounds = XCUIScreen.main.screenshot().image
-            self.ratioScreen = self.maxHeight / Double(screenNativeBounds.size.height)
-            self.deviceWidth = Double(screenNativeBounds.size.width) * self.ratioScreen
-            self.deviceHeight = Double(screenNativeBounds.size.height) * self.ratioScreen
+        self.deviceHeight = Double(screenSize.height)
+        self.deviceWidth = Double(screenSize.width)
+        if(Double(screenSize.height) > maxHeight) {
+            self.ratioScreen = maxHeight / Double(screenSize.height)
+            self.deviceHeight = Double(screenSize.height) * ratioScreen
+            self.deviceWidth = Double(screenSize.width) * ratioScreen
         }
         
         self.resultElement["os"] = "ios"
         self.resultElement["driverVersion"] = "1.0.0"
         self.resultElement["systemName"] = model + " - " + osVersion
-        self.resultElement["deviceWidth"] = applyRatio ? self.deviceWidth : screenSize.width
-        self.resultElement["deviceHeight"] = applyRatio ? self.deviceHeight : screenSize.height
+        self.resultElement["deviceWidth"] = self.deviceWidth
+        self.resultElement["deviceHeight"] = self.deviceHeight
         self.resultElement["channelWidth"] = applyRatio ? self.deviceWidth : screenSize.width
         self.resultElement["channelHeight"] = applyRatio ? self.deviceHeight : screenSize.height
         self.resultElement["channelX"] = 0
