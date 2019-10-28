@@ -443,10 +443,8 @@ class atsDriver: XCTestCase {
                     }else if(action == ActionsEnum.APP.rawValue){
                         if(ActionsEnum.START.rawValue == firstParam) {
                             app = XCUIApplication.init(bundleIdentifier: parameters[1])
-                            app.launch()
-                            
-                            if(app.state.rawValue == 4) {
-                                
+                            if(self.appsInstalled.contains(parameters[1])) {
+                                app.launch()
                                 self.resultElement["status"] = 0
                                 self.resultElement["label"] = app.label
                                 self.resultElement["icon"] = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAC4jAAAuIwF4pT92AAAAB3RJTUUH4wgNCzQS2tg9zgAAABl0RVh0Q29tbWVudABDcmVhdGVkIHdpdGggR0lNUFeBDhcAAAAMSURBVAjXY2DY/QYAAmYBqC0q4zEAAAAASUVORK5CYII="
