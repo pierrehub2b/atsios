@@ -60,6 +60,7 @@ class atsDriver: XCTestCase {
     var isAlert = false
     var forceCapture = false;
     var applications:[[String: Any]] = []
+    var emptyImg:String = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII="
     
     var continueExecution = true
     
@@ -444,12 +445,12 @@ class atsDriver: XCTestCase {
                         if(ActionsEnum.START.rawValue == firstParam) {
                             app = XCUIApplication.init(bundleIdentifier: parameters[1])
                             if(self.appsInstalled.contains(parameters[1])) {
-                                app.launch()
-                                self.resultElement["status"] = 0
-                                self.resultElement["label"] = app.label
-                                self.resultElement["icon"] = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAC4jAAAuIwF4pT92AAAAB3RJTUUH4wgNCzQS2tg9zgAAABl0RVh0Q29tbWVudABDcmVhdGVkIHdpdGggR0lNUFeBDhcAAAAMSURBVAjXY2DY/QYAAmYBqC0q4zEAAAAASUVORK5CYII="
-                                self.resultElement["version"] = "0.0.0"
-                                self.lastCapture = 0.0
+                                 app.launch()
+                                 self.resultElement["status"] = 0
+                                 self.resultElement["label"] = app.label
+                                 self.resultElement["icon"] = self.emptyImg
+                                 self.resultElement["version"] = "0.0.0"
+                                 self.lastCapture = 0.0
                             } else {
                                 self.resultElement["message"] = "App package not found in current device: " + parameters[1]
                                 self.resultElement["status"] = -51
