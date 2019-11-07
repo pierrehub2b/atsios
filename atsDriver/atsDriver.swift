@@ -439,7 +439,7 @@ class atsDriver: XCTestCase {
                     }else if(action == ActionsEnum.APP.rawValue){
                         if(ActionsEnum.START.rawValue == firstParam) {
                             app = XCUIApplication.init(bundleIdentifier: parameters[1])
-                            if(self.appsInstalled.contains(parameters[1])) {
+                            if(self.appsInstalled.contains(parameters[1]) || true) {
                                  app.launch()
                                  self.resultElement["status"] = 0
                                  self.resultElement["label"] = app.label
@@ -662,17 +662,24 @@ class atsDriver: XCTestCase {
     
     func driverInfoBase(applyRatio: Bool) {
         let screenNativeBounds = XCUIScreen.main.screenshot().image
+        let screenNativeBoundsWidth = screenNativeBounds.size.width
+        let screenNativeBoundsHeight = screenNativeBounds.size.height
+        
+        let screenBounds = UIScreen.main.bounds
+        let screenScale = UIScreen.main.scale
+        let screenSize = CGSize(width: screenBounds.size.width * screenScale, height: screenBounds.size.height * screenScale)
+        
         self.ratioScreen = self.maxHeight / Double(screenNativeBounds.size.height)
-        self.deviceWidth = Double(screenNativeBounds.size.width) * self.ratioScreen
-        self.deviceHeight = Double(screenNativeBounds.size.height) * self.ratioScreen
+        self.deviceWidth = Double(screenNativeBoundsWidth) * self.ratioScreen
+        self.deviceHeight = Double(screenNativeBoundsHeight) * self.ratioScreen
         
         self.resultElement["os"] = "ios"
         self.resultElement["driverVersion"] = "1.0.0"
         self.resultElement["systemName"] = model + " - " + osVersion
-        self.resultElement["deviceWidth"] = self.deviceWidth
-        self.resultElement["deviceHeight"] = self.deviceHeight
-        self.resultElement["channelWidth"] = applyRatio ? self.deviceWidth : screenNativeBounds.size.width
-        self.resultElement["channelHeight"] = applyRatio ? self.deviceHeight : screenNativeBounds.size.height
+        self.resultElement["deviceWidth"] = applyRatio ? self.deviceWidth : screenSize.width
+        self.resultElement["deviceHeight"] = applyRatio ? self.deviceHeight : screenSize.height
+        self.resultElement["channelWidth"] = applyRatio ? self.deviceWidth : screenSize.width
+        self.resultElement["channelHeight"] = applyRatio ? self.deviceHeight : screenSize.height
         self.resultElement["channelX"] = 0
         self.resultElement["channelY"] = 0
     }
