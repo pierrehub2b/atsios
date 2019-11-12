@@ -426,8 +426,8 @@ class atsDriver: XCTestCase {
                                     self.resultElement["message"] = "tap on element"
                                 } else {
                                     if(ActionsEnum.SWIPE.rawValue == parameters[1]) {
-                                        let directionX = (Double(parameters[4]) ?? 0.0)/ratioWidth
-                                        let directionY = (Double(parameters[5]) ?? 0.0)/ratioHeight
+                                        let directionX = (Double(parameters[4]) ?? 0.0)
+                                        let directionY = (Double(parameters[5]) ?? 0.0)
                                         self.swipeCoordinate(x: calculateX, y: calculateY, swipeX: directionX, swipeY: directionY)
                                         self.forceCapture = true;
                                         self.resultElement["status"] = 0
@@ -571,16 +571,51 @@ class atsDriver: XCTestCase {
         }
     }
     
+    enum direction : Int {
+        case Up, Down, Left, Right
+    }
+    
     func swipeCoordinate(x xCoordinate: Double, y yCoordinate: Double, swipeX xSwipe: Double, swipeY ySwipe: Double) {
+        var direction:direction;
+        var adjustment: CGFloat = 0
+        if(xSwipe > 0) {
+            direction = .Right
+            adjustment = 0.5
+        } else if(xSwipe < 0) {
+            direction = .Left
+            adjustment = -0.5
+        } else if(ySwipe < 0) {
+            direction = .Up
+            adjustment = -0.5
+        } else {
+            direction = .Down
+            adjustment = 0.5
+        }
+        
+        let halfX : CGFloat = CGFloat(xCoordinate*ratioScreen / self.deviceWidth)
+        let halfY : CGFloat = CGFloat(yCoordinate*ratioScreen / self.deviceHeight)
         let pressDuration : TimeInterval = 0.05
         
-        let startNormalized = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
-        let startCoordinate = startNormalized.withOffset(CGVector(dx: xCoordinate, dy: yCoordinate))
+        let centre = app.coordinate(withNormalizedOffset: CGVector(dx: halfX, dy: halfY))
+        let aboveCentre = app.coordinate(withNormalizedOffset: CGVector(dx: halfX, dy: halfY + adjustment))
+        let belowCentre = app.coordinate(withNormalizedOffset: CGVector(dx: halfX, dy: halfY + adjustment))
+        let leftOfCentre = app.coordinate(withNormalizedOffset: CGVector(dx: halfX + adjustment, dy: halfY))
+        let rightOfCentre = app.coordinate(withNormalizedOffset: CGVector(dx: halfX + adjustment, dy: halfY))
         
-        let endNormalized = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
-        let endCoordinate = endNormalized.withOffset(CGVector(dx: (xCoordinate+xSwipe), dy: (yCoordinate + ySwipe)))
-        
-        startCoordinate.press(forDuration: pressDuration, thenDragTo: endCoordinate)
+        switch direction {
+            case .Up:
+                centre.press(forDuration: pressDuration, thenDragTo: aboveCentre)
+                break
+            case .Down:
+                centre.press(forDuration: pressDuration, thenDragTo: belowCentre)
+                break
+            case .Left:
+                centre.press(forDuration: pressDuration, thenDragTo: leftOfCentre)
+                break
+            case .Right:
+                centre.press(forDuration: pressDuration, thenDragTo: rightOfCentre)
+                break
+        }
     }
     
     func retrieveElement(parameter: String, field: String) -> XCUIElement? {
