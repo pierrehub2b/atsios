@@ -311,7 +311,7 @@ class atsDriver: XCTestCase {
                 sendBody(Data(bytes: bytes))
                 sendBody(Data())
             }else if(action == ActionsEnum.INFO.rawValue){
-                self.driverInfoBase(applyRatio: false)
+                self.driverInfoBase()
                 self.resultElement["message"] = "device capabilities"
                 self.resultElement["status"] = 0
                 self.resultElement["id"] = self.uid
@@ -329,7 +329,7 @@ class atsDriver: XCTestCase {
                     if(action == ActionsEnum.DRIVER.rawValue){
                         if(ActionsEnum.START.rawValue == firstParam) {
                             self.continueExecution = true
-                            self.driverInfoBase(applyRatio: true)
+                            self.driverInfoBase()
                             self.resultElement["status"] = 0
                             self.resultElement["screenCapturePort"] = self.udpPort
                         } else {
@@ -699,7 +699,7 @@ class atsDriver: XCTestCase {
         app.launchEnvironment["ENVOY_BASEURL"] = "http://localhost:\(self.port)"
     }
     
-    func driverInfoBase(applyRatio: Bool) {
+    func driverInfoBase() {
         
         // Application size
         let screenNativeBounds = XCUIScreen.main.screenshot().image
