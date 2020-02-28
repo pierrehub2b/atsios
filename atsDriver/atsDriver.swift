@@ -194,7 +194,6 @@ class atsDriver: XCTestCase {
             let socket = try Socket.create(family: .inet, type: .datagram, proto: .udp)
             
             repeat {
-                print("j'ouvre une connexion")
                 let currentConnection = try socket.listen(forMessage: &data, on: self.udpPort)
                 self.addNewConnection(socket: socket, currentConnection: currentConnection)
             } while true
@@ -709,17 +708,20 @@ class atsDriver: XCTestCase {
     func driverInfoBase() {
         
         // Application size
-        /*let screenNativeBounds = XCUIScreen.main.screenshot().image
-        let screenShotWidth = screenNativeBounds.size.width
-        let screenShotHeight = screenNativeBounds.size.height*/
-        
-        // Device size
-        let screenBounds = UIScreen.main.bounds
         let screenScale = UIScreen.main.scale
-        let screenSize = CGSize(width: screenBounds.size.width * screenScale, height: screenBounds.size.height * screenScale)
+        let screenNativeBounds = XCUIScreen.main.screenshot().image.size
+        let screenShotWidth = screenNativeBounds.width * screenScale
+        let screenShotHeight = screenNativeBounds.height * screenScale
+
+        /* print(screenNativeBounds)
+        // Device size
+        let screenBounds = UIScreen.main.applicationFrame
+        print(UIScreen.screens)
+        let screenScale = UIScreen.main.nativeScale
+        let screenSize = CGSize(width: screenBounds.size.width * screenScale, height: screenBounds.size.height * screenScale) */
         
-        self.channelWidth = Double(screenSize.width)
-        self.channelHeight = Double(screenSize.height)
+        self.channelWidth = Double(screenShotWidth)  //Double(screenSize.width)
+        self.channelHeight = Double(screenShotHeight) //Double(screenSize.height)
         
         var ratio:Double = 1.0
         let resolution = computerResolution.split(separator: "x")
