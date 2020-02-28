@@ -62,6 +62,7 @@ class atsDriver: XCTestCase {
     var forceCapture = false;
     var applications:[[String: Any]] = []
     var emptyImg:String = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII="
+    var computerResolution:String = "1920x1080"
     
     var continueExecution = true
     
@@ -85,11 +86,14 @@ class atsDriver: XCTestCase {
             self.udpStart()
         }
         
+        
         var customPort = "";
+        
         let testBundle = Bundle(for: atsDriver.self)
         if let url = testBundle.url(forResource: "Settings", withExtension: "plist"),
             let myDict = NSDictionary(contentsOf: url) as? [String:Any] {
             customPort = myDict["CFCustomPort"].unsafelyUnwrapped as! String;
+            computerResolution = myDict["CFComputerResolution"] as! String;
             for itm in myDict {
                 if(itm.key.contains("CFAppBundleID")) {
                     self.appsInstalled.append(itm.value as! String)
@@ -115,6 +119,7 @@ class atsDriver: XCTestCase {
             if(isFree == true) {
                 self.port = Int(customPort)!
             } else {
+                
                 return;
             }
         } else {
@@ -164,6 +169,7 @@ class atsDriver: XCTestCase {
     }
     
     func setupInstalledApp(){
+        print("les apps installed : \(self.appsInstalled)")
         for app in self.appsInstalled {
             //TODO retrieve right bundle Name
             let name = "CFBundleName"
@@ -178,6 +184,8 @@ class atsDriver: XCTestCase {
         app["version"] = ""
         app["icon"] = icon
         applications.append(app)
+        print("Les apps :")
+        print(applications)
     }
     
     func udpStart(){
@@ -186,6 +194,7 @@ class atsDriver: XCTestCase {
             let socket = try Socket.create(family: .inet, type: .datagram, proto: .udp)
             
             repeat {
+                print("j'ouvre une connexion")
                 let currentConnection = try socket.listen(forMessage: &data, on: self.udpPort)
                 self.addNewConnection(socket: socket, currentConnection: currentConnection)
             } while true
@@ -265,16 +274,13 @@ class atsDriver: XCTestCase {
     private func setupWebApp() {
         
         let loop = try! SelectorEventLoop(selector: try! KqueueSelector())
-        let server = DefaultHTTPServer(eventLoop: loop, interface: "0.0.0.0", port: self.port) {
-            (
-            environ: [String: Any],
-            startResponse: ((String, [(String, String)]) -> Void),
-            sendBody: ((Data) -> Void)
-            ) in
+        let server = DefaultHTTPServer(eventLoop: loop, interface: "0.0.0.0", port: self.port) { environ, startResponse, sendBody in
+            print(environ)
+            print(sendBody)
             
             let query_String = environ["PATH_INFO"]! as! String
             let action = query_String.replacingOccurrences(of: "/", with: "")
-            var parameters: [String] = [String]()
+            var parameters: [String] = []
             
             let input = environ["swsgi.input"] as! SWSGIInput
             input { data in
@@ -303,6 +309,7 @@ class atsDriver: XCTestCase {
                     self.resultElement["deviceHeight"] = self.channelHeight
                     self.resultElement["deviceWidth"] = self.channelWidth
                     self.resultElement["root"] = app.debugDescription
+                    
                 }
             }else if(action == ActionsEnum.SCREENSHOT.rawValue){
                 startResponse("200 OK", [("Content-Type", "application/octet-stream")])
@@ -702,9 +709,9 @@ class atsDriver: XCTestCase {
     func driverInfoBase() {
         
         // Application size
-        let screenNativeBounds = XCUIScreen.main.screenshot().image
+        /*let screenNativeBounds = XCUIScreen.main.screenshot().image
         let screenShotWidth = screenNativeBounds.size.width
-        let screenShotHeight = screenNativeBounds.size.height
+        let screenShotHeight = screenNativeBounds.size.height*/
         
         // Device size
         let screenBounds = UIScreen.main.bounds
@@ -714,16 +721,27 @@ class atsDriver: XCTestCase {
         self.channelWidth = Double(screenSize.width)
         self.channelHeight = Double(screenSize.height)
         
-        self.deviceWidth = Double(screenShotWidth);
-        self.deviceHeight = Double(screenShotHeight);
+        var ratio:Double = 1.0
+        let resolution = computerResolution.split(separator: "x")
+        let computerHeight = Double(resolution[1])!
+        let computerWidth = Double(resolution[0])!
+        
+        if(computerHeight < Double(channelHeight)) {
+            ratio = Double(channelHeight) / (computerHeight - 200);
+        } else if(computerWidth < Double(channelWidth)) {
+            ratio = Double(channelHeight) / (computerWidth - 200);
+        }
+        	
+        self.deviceWidth = Double(channelWidth / ratio)
+        self.deviceHeight = Double(channelHeight / ratio)
         
         self.resultElement["os"] = "ios"
         self.resultElement["driverVersion"] = self.driverVersion
         self.resultElement["systemName"] = model + " - " + osVersion
-        self.resultElement["deviceWidth"] = screenShotWidth
-        self.resultElement["deviceHeight"] = screenShotHeight
-        self.resultElement["channelWidth"] = screenSize.width
-        self.resultElement["channelHeight"] = screenSize.height
+        self.resultElement["deviceWidth"] = self.deviceWidth
+        self.resultElement["deviceHeight"] = self.deviceHeight
+        self.resultElement["channelWidth"] = self.channelWidth
+        self.resultElement["channelHeight"] = self.channelHeight
         self.resultElement["channelX"] = 0
         self.resultElement["channelY"] = 0
     }
