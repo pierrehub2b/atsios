@@ -311,9 +311,9 @@ class atsDriver: XCTestCase {
                     
                 }
             }else if(action == ActionsEnum.SCREENSHOT.rawValue){
-                startResponse("200 OK", [("Content-Type", "application/octet-stream")])
                 let screenshot = XCUIScreen.main.screenshot()
                 let bytes = self.getArrayOfBytesFromImage(imageData: screenshot.pngRepresentation)
+                startResponse("200 OK", [("Content-Type", "application/octet-stream"),("Content-length", bytes.count.description)])
                 sendBody(Data(bytes: bytes))
                 sendBody(Data())
             }else if(action == ActionsEnum.INFO.rawValue){
@@ -724,15 +724,7 @@ class atsDriver: XCTestCase {
         self.channelHeight = Double(screenShotHeight) //Double(screenSize.height)
         
         var ratio:Double = 1.0
-        let resolution = computerResolution.split(separator: "x")
-        let computerHeight = Double(resolution[1])!
-        let computerWidth = Double(resolution[0])!
-        
-        if(computerHeight < Double(channelHeight)) {
-            ratio = Double(channelHeight) / (computerHeight - 200);
-        } else if(computerWidth < Double(channelWidth)) {
-            ratio = Double(channelHeight) / (computerWidth - 200);
-        }
+        ratio = channelHeight / Double(screenNativeBounds.height);
         	
         self.deviceWidth = Double(channelWidth / ratio)
         self.deviceHeight = Double(channelHeight / ratio)
