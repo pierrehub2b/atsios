@@ -75,6 +75,7 @@ class atsDriver: XCTestCase {
     ]
     
     override func setUp() {
+        
         self.appsInstalled = []
         super.setUp()
         continueAfterFailure = true
@@ -163,10 +164,10 @@ class atsDriver: XCTestCase {
         guard let buttonBarList = dic["buttonBar"] as? [String] else {
             return icons
         }
+        
         for app in buttonBarList {
-            if let id = app as? String,
-                id.contains("com.") {
-                icons.append(id)
+            if app.contains("com.") {
+                icons.append(app)
             }
         }
         
@@ -257,7 +258,7 @@ class atsDriver: XCTestCase {
         let newImage = UIGraphicsGetImageFromCurrentImageContext()
         UIGraphicsEndImageContext()
         
-        self.imgView = UIImageJPEGRepresentation(newImage ?? UIImage(), 0.2)
+        self.imgView = (newImage ?? UIImage()).jpegData(compressionQuality: 0.2)
     }
     
     func toByteArrary<T>(value: T)  -> [UInt8] where T: UnsignedInteger, T: FixedWidthInteger{
@@ -313,9 +314,12 @@ class atsDriver: XCTestCase {
                     }
                     self.resultElement["root"] = self.appDomDesc
                 }
-            }else if(action == ActionsEnum.SCREENSHOT.rawValue){
+            } else if (action == ActionsEnum.scripting.rawValue) {
+                // let request = ScriptingExecutor(script: [:])
+                // request.execute()
+            } else if(action == ActionsEnum.SCREENSHOT.rawValue){
                 let screenshot = XCUIScreen.main.screenshot()
-                let bytes = self.getArrayOfBytesFromImage(imageData: UIImagePNGRepresentation(screenshot.image)!)
+                let bytes = self.getArrayOfBytesFromImage(imageData: screenshot.image.pngData()!)
                 startResponse("200 OK", [("Content-Type", "application/octet-stream"),("Content-length", bytes.count.description)])
                 //sendLogs(type: logType.INFO, message: "Get screenshot informations")
                 self.screenShotThread.sync {
@@ -434,7 +438,7 @@ class atsDriver: XCTestCase {
                                 }
                             } else {
                                 
-                                let coordinates = parameters[parameters.count-1].split(separator: ";")
+                                let coordinates = parameters[0].split(separator: ";")
                                 let frame:Frame = Frame(
                                     x: Double(coordinates[0])!,
                                     y: Double(coordinates[1])!,
@@ -463,28 +467,40 @@ class atsDriver: XCTestCase {
                                     self.tapCoordinate(at: (calculateX * self.deviceWidth / self.channelWidth), and: (calculateY * self.deviceHeight / self.channelHeight))
                                     self.resultElement["status"] = "0"
                                     self.resultElement["message"] = "tap on element"
-                                } else {
-                                    if(ActionsEnum.SWIPE.rawValue == parameters[1]) {
-                                        let directionX = (Double(parameters[4]) ?? 0.0)
-                                        let directionY = (Double(parameters[5]) ?? 0.0)
-                                        self.swipeCoordinate(x: calculateX, y: calculateY, swipeX: directionX, swipeY: directionY)
-                                        self.forceCapture = true;
-                                        self.resultElement["status"] = "0"
-                                        self.resultElement["message"] = "swipe element"
+                                } else if(ActionsEnum.SWIPE.rawValue == parameters[1]) {
+                                    let directionX = (Double(parameters[4]) ?? 0.0)
+                                    let directionY = (Double(parameters[5]) ?? 0.0)
+                                    self.swipeCoordinate(x: calculateX, y: calculateY, swipeX: directionX, swipeY: directionY)
+                                    self.forceCapture = true;
+                                    self.resultElement["status"] = "0"
+                                    self.resultElement["message"] = "swipe element"
+                                } else if (ActionsEnum.scripting.rawValue == parameters[1]) {
+                                    let script = parameters[2]
+                                    let executor = ScriptingExecutor(script)
+                                    app = XCUIApplication(bundleIdentifier: "com.apple.Preferences")
+                                    app.activate()
+                                    let normalized = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
+                                    let coordinate = normalized.withOffset(CGVector(dx: calculateX, dy: calculateY))
+                                    
+                                    do {
+                                        try executor.execute(coordinate: coordinate)
+                                    } catch {
+                                    
                                     }
                                 }
+                                
                             }
                         }
                     }else if(action == ActionsEnum.APP.rawValue){
                         if(ActionsEnum.START.rawValue == firstParam) {
                             app = XCUIApplication.init(bundleIdentifier: parameters[1])
                             if(self.appsInstalled.contains(parameters[1]) || (self.appsInstalled.count == 0 && self.applications.count == 0)) {
-                                 app.launch()
+                                app.launch()
                                 //sendLogs(type: logType.INFO, message: "Launching app \(parameters[1])")
-                                 self.resultElement["status"] = "0"
-                                 self.resultElement["label"] = app.label
-                                 self.resultElement["icon"] = self.emptyImg
-                                 self.resultElement["version"] = "0.0.0"
+                                self.resultElement["status"] = "0"
+                                self.resultElement["label"] = app.label
+                                self.resultElement["icon"] = self.emptyImg
+                                self.resultElement["version"] = "0.0.0"
                             } else {
                                 sendLogs(type: logType.ERROR, message: "Error on app launching: \(parameters[1])")
                                 self.resultElement["message"] = "app package not found : " + parameters[1]
@@ -648,12 +664,12 @@ class atsDriver: XCTestCase {
             let xSwipe = app.coordinate(withNormalizedOffset: CGVector(dx: halfX + adjustment, dy: halfY))
             
             switch direction {
-                case .vertical:
-                    centre.press(forDuration: pressDuration, thenDragTo: ySwipe)
-                    break
-                case .horizontal:
-                    centre.press(forDuration: pressDuration, thenDragTo: xSwipe)
-                    break
+            case .vertical:
+                centre.press(forDuration: pressDuration, thenDragTo: ySwipe)
+                break
+            case .horizontal:
+                centre.press(forDuration: pressDuration, thenDragTo: xSwipe)
+                break
             }
         } else {
             sendLogs(type: logType.ERROR, message: "App is null")
@@ -751,7 +767,7 @@ class atsDriver: XCTestCase {
         
         var ratio:Double = 1.0
         ratio = channelHeight / Double(screenNativeBounds.height);
-        	
+        
         self.deviceWidth = Double(channelWidth / ratio)
         self.deviceHeight = Double(channelHeight / ratio)
         

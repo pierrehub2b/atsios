@@ -24,4 +24,5 @@ enum ActionsEnum: String {
     case EMPTY = "&empty;"
     case DOM = "dom"
     case SCREENSHOT = "screenshot"
+    case scripting
 }
