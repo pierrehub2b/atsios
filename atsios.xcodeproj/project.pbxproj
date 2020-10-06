@@ -31,10 +31,10 @@
 		9A907BBD234901DF00F3DE15 /* AppIcons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A907BBC234901DF00F3DE15 /* AppIcons.swift */; };
 		D8020C38252CB28D0077CD01 /* Settings.json in Resources */ = {isa = PBXBuildFile; fileRef = D8020C37252CB28D0077CD01 /* Settings.json */; };
 		D8020C3F252CB3ED0077CD01 /* Settings.json in Resources */ = {isa = PBXBuildFile; fileRef = D8020C37252CB28D0077CD01 /* Settings.json */; };
+		D8020C47252CC7680077CD01 /* Settings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8020C46252CC7680077CD01 /* Settings.swift */; };
 		D816CA1024B71C4D00B914C5 /* Socket in Frameworks */ = {isa = PBXBuildFile; productRef = D816CA0F24B71C4D00B914C5 /* Socket */; };
 		D816CA1324B71C7400B914C5 /* Ambassador in Frameworks */ = {isa = PBXBuildFile; productRef = D816CA1224B71C7400B914C5 /* Ambassador */; };
 		D816CA1624B71C9400B914C5 /* Embassy in Frameworks */ = {isa = PBXBuildFile; productRef = D816CA1524B71C9400B914C5 /* Embassy */; };
-		D82E8C4E252B459F0024A05A /* Server.swift in Sources */ = {isa = PBXBuildFile; fileRef = D82E8C4D252B459F0024A05A /* Server.swift */; };
 		D8865A8A24C98099003C45D5 /* PropertyController.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8865A8924C98099003C45D5 /* PropertyController.swift */; };
 /* End PBXBuildFile section */
 
@@ -87,7 +87,7 @@
 		92C416C42473D9D300A772AF /* Content.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Content.swift; sourceTree = "<group>"; };
 		9A907BBC234901DF00F3DE15 /* AppIcons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppIcons.swift; sourceTree = "<group>"; };
 		D8020C37252CB28D0077CD01 /* Settings.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Settings.json; sourceTree = "<group>"; };
-		D82E8C4D252B459F0024A05A /* Server.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Server.swift; sourceTree = "<group>"; };
+		D8020C46252CC7680077CD01 /* Settings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Settings.swift; sourceTree = "<group>"; };
 		D8865A8924C98099003C45D5 /* PropertyController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PropertyController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -152,7 +152,6 @@
 				923AE14C24571BB600156ECB /* Controllers */,
 				9254C2A124518FF1006DC4FC /* Scripting */,
 				047BFA7F22F178D800BB2E25 /* atsDriver.swift */,
-				D82E8C4D252B459F0024A05A /* Server.swift */,
 			);
 			path = atsDriver;
 			sourceTree = "<group>";
@@ -180,6 +179,7 @@
 			children = (
 				923AE160245F3D8100156ECB /* Application.swift */,
 				92C416C22473CB5B00A772AF /* AtsClient.swift */,
+				D8020C46252CC7680077CD01 /* Settings.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -357,11 +357,11 @@
 				0417A8752315366D0094FC89 /* EnumFunctions.swift in Sources */,
 				923AE1582459690400156ECB /* ScreenshotController.swift in Sources */,
 				923AE15024571FFB00156ECB /* DriverController.swift in Sources */,
-				D82E8C4E252B459F0024A05A /* Server.swift in Sources */,
 				0400C0A8231D145B004CD4C9 /* UIDeviceName.swift in Sources */,
 				923AE15A245F007600156ECB /* Router.swift in Sources */,
 				047BFA8022F178D800BB2E25 /* atsDriver.swift in Sources */,
 				92C416C32473CB5B00A772AF /* AtsClient.swift in Sources */,
+				D8020C47252CC7680077CD01 /* Settings.swift in Sources */,
 				D8865A8A24C98099003C45D5 /* PropertyController.swift in Sources */,
 				9A907BBD234901DF00F3DE15 /* AppIcons.swift in Sources */,
 				9254C2A02449A8E3006DC4FC /* ScriptingExecutor.swift in Sources */,

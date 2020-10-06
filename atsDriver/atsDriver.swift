@@ -60,11 +60,6 @@ class atsDriver: XCTestCase {
     var tcpSocket = socket(AF_INET, SOCK_STREAM, 0)
     let bluetoothName = UIDevice.current.name
     
-    struct Settings: Decodable {
-        let apps: [String]
-        let customPort: String?
-    }
-    
     override func setUp() {
                 
         super.setUp()
@@ -433,6 +428,7 @@ class atsDriver: XCTestCase {
                     var hostname = [CChar](repeating: 0, count: Int(NI_MAXHOST))
                     getnameinfo(interface.ifa_addr, socklen_t(interface.ifa_addr.pointee.sa_len), &hostname, socklen_t(hostname.count), nil, socklen_t(UIDevice.isSimulator ? 1 : 0), NI_NUMERICHOST)
                     address = String(cString: hostname)
+                    break
                 }
             }
         }

@@ -45,16 +45,6 @@ final class InfoController {
             
     func fetchInfo() -> InfoOutput {
         
-        let testBundle = Bundle(for: atsDriver.self)
-        if (!UIDevice.isSimulator) {
-            appsInstalled = []
-            if let url = testBundle.url(forResource: "Settings", withExtension: "plist"), let myDict = NSDictionary(contentsOf: url) as? [String:Any] {
-                appsInstalled = myDict.filter { $0.key.contains("CFAppBundleID") }.map { $0.value } as! [String]
-            }
-
-            Application.setup()
-        }
-        
         let screenScale = UIScreen.main.scale
         let screenNativeBounds = XCUIScreen.main.screenshot().image.size
         let screenShotWidth = screenNativeBounds.width * screenScale
