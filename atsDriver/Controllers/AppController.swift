@@ -7,40 +7,52 @@
 
 import Foundation
 import XCTest
-import Swifter
 
 extension AppController: Routeable {
     
-    var name: String { return "app" }
+    var name: String {
+        return "app"
+    }
     
-    func handleRoutes(_ request: HttpRequest) -> HttpResponse {
-        guard let bodyString = String(bytes: request.body, encoding: .utf8) else {
-            return .internalServerError
+    func handleParameters(_ parameters: [String], token: String?) throws -> Any {
+        guard let firstParameter = parameters.first else {
+            throw Router.RouterError.missingParameters
         }
         
-        var bodyParameters: [String] = bodyString.components(separatedBy: "\n")
-        let actionValue = bodyParameters.removeFirst()
-        
-        guard let action = AppAction(rawValue: actionValue) else {
-            return try! Router.Output(message: "missing app action type \(actionValue)", status: "-42").toHttpResponse()
+        guard let action = AppAction(rawValue: firstParameter) else {
+            return Router.Output(message: "missing app action type \(firstParameter)", status: "-42")
         }
         
         switch action {
-        case .start:    return self.startHandler(bodyParameters)
-        case .stop:     return self.stopHandler(bodyParameters)
-        case .switch:   return self.switchHandler(bodyParameters)
-        case .info:     return self.fetchInfoHandler()
+        case .start:
+            let appBundleIdentifier = try fetchAppBundleIdentifier(parameters)
+            return start(appBundleIdentifier)
+        case .stop:
+            let appBundleIdentifier = try fetchAppBundleIdentifier(parameters)
+            return stop(appBundleIdentifier)
+        case .switch:
+            let appBundleIdentifier = try fetchAppBundleIdentifier(parameters)
+            return `switch`(appBundleIdentifier)
+        case .info:
+            return info()
         }
     }
 }
 
 final class AppController {
-    
+        
     private enum AppAction: String {
         case start
         case stop
         case info
         case `switch`
+    }
+
+    private func fetchAppBundleIdentifier(_ parameters: [String]) throws -> String {
+        guard parameters.count > 1 else { throw Router.RouterError.missingParameters }
+        
+        let bundleIdentifier = parameters[1]
+        return bundleIdentifier
     }
     
     private struct StartOutput: Content {
@@ -61,53 +73,39 @@ final class AppController {
         let info = Info()
     }
     
-    private func startHandler(_ parameters: [String]) -> HttpResponse {
-        guard let bundleIdentifier = parameters.first else {
-            return .internalServerError
-        }
-        
-        guard Device.current.applications.map({ $0.packageName }).contains(bundleIdentifier) else {
+    private func start(_ bundleIdentifier: String) -> Content {
+        guard appsInstalled.contains(bundleIdentifier) || (appsInstalled.count == 0 && applications.count == 0) else {
             sendLogs(type: logType.ERROR, message: "Error on app launching: \(bundleIdentifier)")
-            application = nil
-            return try! Router.Output(message: "app package not found : \(bundleIdentifier)", status: "-51").toHttpResponse()
+            
+            app = nil
+            return Router.Output(message: "app package not found : \(bundleIdentifier)", status: "-51")
         }
         
-        sendLogs(type: logType.INFO, message: "Launching app \(bundleIdentifier)")
+        app = XCUIApplication(bundleIdentifier: bundleIdentifier)
+        app.launch()
         
-        application = XCUIApplication(bundleIdentifier: bundleIdentifier)
-        application.launch()
-                  
-        return try! StartOutput(label: application.label).toHttpResponse()
+        let label = app.label
+        return StartOutput(label: label)
     }
     
-    private func stopHandler(_ parameters: [String]) -> HttpResponse {
-        guard let bundleIdentifier = parameters.first else {
-            return .internalServerError
-        }
+    private func stop(_ bundleIdentifier: String) -> Content {
+        app = XCUIApplication(bundleIdentifier: bundleIdentifier)
+        app.terminate()
+        app = nil;
         
-        sendLogs(type: logType.INFO, message: "Stop app \(bundleIdentifier)")
-        
-        application = XCUIApplication(bundleIdentifier: bundleIdentifier)
-        application.terminate()
-        application = nil
-        
-        return try! Router.Output(message: "stop app \(bundleIdentifier)").toHttpResponse()
+        // sendLogs(type: logType.INFO, message: "Stop app \(parameters[1])")
+        return Router.Output(message: "stop app \(bundleIdentifier)")
     }
     
-    private func switchHandler(_ parameters: [String]) -> HttpResponse {
-        guard let bundleIdentifier = parameters.first else {
-            return .internalServerError
-        }
+    private func `switch`(_ bundleIdentifier: String) -> Content {
+        app = XCUIApplication(bundleIdentifier: bundleIdentifier)
+        app.activate()
         
-        sendLogs(type: logType.INFO, message: "Switch app \(bundleIdentifier)")
-        
-        application = XCUIApplication(bundleIdentifier: bundleIdentifier)
-        application.activate()
-        
-        return try! Router.Output(message: "switch app \(bundleIdentifier)").toHttpResponse()
+        //sendLogs(type: logType.INFO, message: "Switch app \(parameters[1])")
+        return Router.Output(message: "switch app \(bundleIdentifier)")
     }
     
-    private func fetchInfoHandler() -> HttpResponse {
-        return try! InfoOutput().toHttpResponse()
+    private func info() -> Content {
+        return InfoOutput()
     }
 }

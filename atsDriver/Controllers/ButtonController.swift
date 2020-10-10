@@ -7,27 +7,27 @@
 
 import Foundation
 import XCTest
-import Swifter
 
 extension ButtonController: Routeable {
     
-    var name: String { return "sysbutton" }
+    var name: String {
+        return "sysbutton"
+    }
     
-    func handleRoutes(_ request: HttpRequest) -> HttpResponse {
-        guard let buttonName = String(bytes: request.body, encoding: .utf8) else {
-            return .internalServerError
+    func handleParameters(_ parameters: [String], token: String?) throws -> Any {
+        guard let firstParameter = parameters.first else {
+            throw Router.RouterError.missingParameters
         }
         
-        guard let action = Device.Button(rawValue: buttonName) else {
-            return .internalServerError
+        guard let action = ButtonAction(rawValue: firstParameter) else {
+            throw ButtonControllerError.unknowButton
         }
         
-        switch action {
-        case .lock:
+        if action == .lock {
             XCUIDevice.shared.perform(NSSelectorFromString("pressLockButton"))
-            return try! Router.Output(message: "press \(action.rawValue) button").toHttpResponse()
-        default:
-            return try! pressButton(action)
+            return Router.Output(message: "press \(action.rawValue) button")
+        } else {
+            return pressButton(action)
         }
     }
 }
@@ -38,16 +38,23 @@ final class ButtonController {
         case unknowButton
     }
     
-    private func pressButton(_ action:Device.Button) throws -> HttpResponse {
+    enum ButtonAction: String, CaseIterable {
+        case home
+        case soundUp
+        case soundDown
+        case lock
+    }
+        
+    private func pressButton(_ action:ButtonAction) -> Router.Output {
         if let deviceButton = transformAction(action) {
             XCUIDevice.shared.press(deviceButton)
-            return try Router.Output(message: "press \(action.rawValue) button").toHttpResponse()
+            return Router.Output(message: "press \(action.rawValue) button")
         } else {
-            return try Router.Output(message: "press \(action.rawValue) button").toHttpResponse()
+            return Router.Output(message: "press \(action.rawValue) button")
         }
     }
     
-    private func transformAction(_ action:Device.Button) -> XCUIDevice.Button? {
+    private func transformAction(_ action:ButtonAction) -> XCUIDevice.Button? {
         switch action {
         case .home:
             return XCUIDevice.Button.home

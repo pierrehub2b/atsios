@@ -16,5 +16,5 @@ enum logType: String {
 }
 
 func sendLogs(type:logType, message:String) {
-    print("[\(type)] \(message)")
+    print("[\(type)] \(message)\n")
 }

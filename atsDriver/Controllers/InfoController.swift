@@ -8,52 +8,57 @@
 import Foundation
 import XCTest
 import UIKit
-import Swifter
 
 extension InfoController: Routeable {
+    var name: String {
+        return "info"
+    }
     
-    var name: String { return "info" }
-    
-    func handleRoutes(_ request: HttpRequest) -> HttpResponse {
-        do {
-            return try fetchInfo()
-        } catch {
-            return .internalServerError
-        }
+    func handleParameters(_ parameters: [String], token: String?) throws -> Any {
+        return fetchInfo()
     }
 }
 
 final class InfoController {
-    
+        
     struct InfoOutput: Content {
         let os = "ios"
-        let driverVersion = Bundle.main.infoDictionary!["CFBundleShortVersionString"] as! String
-        let buildNumber = Bundle.main.infoDictionary!["CFBundleVersion"] as! String
-        let systemName = modelName + " - " + UIDevice.current.systemVersion
-        let systemCountry = NSLocale.current.regionCode
+        let driverVersion: String = "1.1.0"
+        let systemName = UIDevice.modelName.replacingOccurrences(of: "Simulator ", with: "") + " - " + UIDevice.current.systemVersion
         let deviceWidth: Double
         let deviceHeight: Double
         let channelWidth: Double
         let channelHeight: Double
-        let channelX = 0
-        let channelY = 0
-        
+        let channelX: Int = 0
+        let channelY: Int = 0
         let message = "device capabilities"
         let status = "0"
         let id = UIDevice.current.identifierForVendor!.uuidString
-        let model = modelName
+        let model = UIDevice.modelName.replacingOccurrences(of: "Simulator ", with: "")
         let manufacturer = "Apple"
         let brand = "Apple"
         let version = UIDevice.current.systemVersion
         let bluetoothName = UIDevice.current.name
-        let simulator = Device.current.isSimulator
+        let simulator = UIDevice.modelName.range(of: "Simulator", options: .caseInsensitive) != nil
         let applications: [Application]
     }
-    
-    static let modelName = UIDevice.modelName.replacingOccurrences(of: "Simulator ", with: "")
-    
-    func fetchInfo() throws -> HttpResponse {
-        let device = Device.current
-        return try InfoOutput(deviceWidth: device.deviceWidth, deviceHeight: device.deviceHeight, channelWidth: device.channelWidth, channelHeight: device.channelHeight, applications: Device.current.applications).toHttpResponse()
+            
+    func fetchInfo() -> InfoOutput {
+        
+        let screenScale = UIScreen.main.scale
+        let screenNativeBounds = XCUIScreen.main.screenshot().image.size
+        let screenShotWidth = screenNativeBounds.width * screenScale
+        let screenShotHeight = screenNativeBounds.height * screenScale
+        
+        channelWidth = Double(screenShotWidth)  //Double(screenSize.width)
+        channelHeight = Double(screenShotHeight) //Double(screenSize.height)
+        
+        var ratio:Double = 1.0
+        ratio = channelHeight / Double(screenNativeBounds.height);
+        
+        deviceWidth = Double(channelWidth / ratio)
+        deviceHeight = Double(channelHeight / ratio)
+        
+        return InfoOutput(deviceWidth: deviceWidth, deviceHeight: deviceHeight, channelWidth: channelWidth, channelHeight: channelHeight, applications: applications)
     }
 }

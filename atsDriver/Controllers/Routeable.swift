@@ -6,11 +6,10 @@
 //
 
 import Foundation
-import Swifter
 
 protocol Routeable {
     
     var name: String { get }
     
-    func handleRoutes(_ request: HttpRequest) -> HttpResponse
+    func handleParameters(_ parameters: [String], token: String?) throws -> Any
 }
