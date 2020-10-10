@@ -10,5 +10,5 @@ import Foundation
 
 struct Settings: Decodable {
     let apps: [String]
-    let customPort: String?
+    let customPort: in_port_t?
 }
