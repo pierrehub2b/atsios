@@ -1,10 +1,19 @@
+//Licensed to the Apache Software Foundation (ASF) under one
+//or more contributor license agreements.  See the NOTICE file
+//distributed with this work for additional information
+//    regarding copyright ownership.  The ASF licenses this file
+//to you under the Apache License, Version 2.0 (the
+//"License"); you may not use this file except in compliance
+//with the License.  You may obtain a copy of the License at
 //
-//  UDPConnect.swift
-//  atsDriver
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
-//  Created by Caipture on 08/10/2020.
-//  Copyright © 2020 CAIPTURE. All rights reserved.
-//
+//Unless required by applicable law or agreed to in writing,
+//software distributed under the License is distributed on an
+//"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+//KIND, either express or implied.  See the License for the
+//specific language governing permissions and limitations
+//under the License.
 
 import Socket
 import UIKit
@@ -20,7 +29,7 @@ class UDPConnect {
     
     func start() {
         udpThread.async {
-            sendLogs(type: logType.INFO, message: "Starting UDP server on port: \(Device.current.screenCapturePort)")
+            sendLogs(type: .info, message: "Starting UDP server on port: \(Device.current.screenCapturePort)")
             self.udpStart()
         }
     }
@@ -36,10 +45,10 @@ class UDPConnect {
             } while true
         } catch let error {
             guard let socketError = error as? Socket.Error else {
-                sendLogs(type: logType.ERROR, message: "Unexpected error...")
+                sendLogs(type: .error, message: "Unexpected error...")
                 return
             }
-            sendLogs(type: logType.ERROR, message: "Error on socket instance creation: \(socketError.description)")
+            sendLogs(type: .error, message: "Error on socket instance creation: \(socketError.description)")
         }
     }
     
@@ -76,11 +85,11 @@ class UDPConnect {
         }
         catch let error {
             guard let socketError = error as? Socket.Error else {
-                sendLogs(type: logType.ERROR, message: "Unexpected error by connection at \(socket.remoteHostname):\(socket.remotePort)...")
+                sendLogs(type: .error, message: "Unexpected error by connection at \(socket.remoteHostname):\(socket.remotePort)...")
                 return
             }
             if continueExecution {
-                sendLogs(type: logType.ERROR, message: "Error reported by connection at \(socket.remoteHostname):\(socket.remotePort):\n \(socketError.description)")
+                sendLogs(type: .error, message: "Error reported by connection at \(socket.remoteHostname):\(socket.remotePort):\n \(socketError.description)")
             }
         }
         

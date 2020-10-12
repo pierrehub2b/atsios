@@ -1,9 +1,19 @@
+//Licensed to the Apache Software Foundation (ASF) under one
+//or more contributor license agreements.  See the NOTICE file
+//distributed with this work for additional information
+//    regarding copyright ownership.  The ASF licenses this file
+//to you under the Apache License, Version 2.0 (the
+//"License"); you may not use this file except in compliance
+//with the License.  You may obtain a copy of the License at
 //
-//  DriverController.swift
-//  atsDriver
+//      http://www.apache.org/licenses/LICENSE-2.0
 //
-//  Copyright © 2020 CAIPTURE. All rights reserved.
-//
+//Unless required by applicable law or agreed to in writing,
+//software distributed under the License is distributed on an
+//"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+//KIND, either express or implied.  See the License for the
+//specific language governing permissions and limitations
+//under the License.
 
 import Foundation
 import XCTest
@@ -95,26 +105,26 @@ final class DriverController {
              
         let currentDevice = Device.current
         let output = DriverStartOutput(
-            os: currentDevice.os,
-            driverVersion: currentDevice.driverVersion,
-            systemName: currentDevice.systemName,
-            deviceWidth: currentDevice .deviceWidth,
-            deviceHeight: currentDevice.deviceHeight,
-            channelWidth: currentDevice.channelWidth,
-            channelHeight: currentDevice.channelHeight,
-            channelX: currentDevice.channelX,
-            channelY: currentDevice.channelY,
-            screenCapturePort: currentDevice.screenCapturePort
+            os:                 currentDevice.os,
+            driverVersion:      currentDevice.driverVersion,
+            systemName:         currentDevice.systemName,
+            deviceWidth:        currentDevice.deviceWidth,
+            deviceHeight:       currentDevice.deviceHeight,
+            channelWidth:       currentDevice.channelWidth,
+            channelHeight:      currentDevice.channelHeight,
+            channelX:           currentDevice.channelX,
+            channelY:           currentDevice.channelY,
+            screenCapturePort:  currentDevice.screenCapturePort
         )
         
         AtsClient.current = AtsClient(token: output.token, userAgent: userAgent, ipAddress: "")
-        sendLogs(type: logType.STATUS, message: "** DEVICE LOCKED BY : \(AtsClient.current!.userAgent) **")
+        sendLogs(type: LogType.status, message: "** DEVICE LOCKED BY : \(AtsClient.current!.userAgent) **")
         
         return output.toHttpResponse()
     }
     
     private func stopHandler() -> HttpResponse {
-        sendLogs(type: logType.INFO, message: "Terminate app")
+        sendLogs(type: LogType.info, message: "Terminate app")
 
         application?.terminate()
         continueExecution = false
@@ -124,13 +134,13 @@ final class DriverController {
         }
         
         AtsClient.current = nil
-        sendLogs(type: logType.STATUS, message: "** DEVICE UNLOCKED **")
+        sendLogs(type: LogType.status, message: "** DEVICE UNLOCKED **")
 
         return Output(message: "stop ats driver").toHttpResponse()
     }
     
     private func quitHandler() -> HttpResponse {
-        sendLogs(type: logType.INFO, message: "Terminate app")
+        sendLogs(type: LogType.info, message: "Terminate app")
 
         application?.terminate()
         continueExecution = false
@@ -164,8 +174,25 @@ final class DriverController {
             
             return DriverInfoOutput(info: json).toHttpResponse()
         } catch {
-            sendLogs(type: logType.ERROR, message: "Array convertIntoJSON - \(error.localizedDescription)")
+            sendLogs(type: LogType.error, message: "Array convertIntoJSON - \(error.localizedDescription)")
             return DriverInfoOutput(info: "").toHttpResponse()
+        }
+    }
+    
+    private func getStateStringValue(rawValue: UInt) -> String {
+        switch rawValue {
+        case 0:
+            return "unknown"
+        case 1:
+            return "notRunning"
+        case 2:
+            return "runningBackgroundSuspended"
+        case 3:
+            return "runningBackground"
+        case 4:
+            return "runningForeground"
+        default:
+            return "unknown"
         }
     }
 }

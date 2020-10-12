@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		0400C0A8231D145B004CD4C9 /* UIDeviceName.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0400C0A7231D145B004CD4C9 /* UIDeviceName.swift */; };
-		0417A8752315366D0094FC89 /* EnumFunctions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0417A8742315366D0094FC89 /* EnumFunctions.swift */; };
 		047BFA6822F178D700BB2E25 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 047BFA6722F178D700BB2E25 /* AppDelegate.swift */; };
 		047BFA6D22F178D700BB2E25 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 047BFA6B22F178D700BB2E25 /* Main.storyboard */; };
 		047BFA7222F178D800BB2E25 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 047BFA7122F178D800BB2E25 /* Assets.xcassets */; };
@@ -53,7 +52,6 @@
 
 /* Begin PBXFileReference section */
 		0400C0A7231D145B004CD4C9 /* UIDeviceName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIDeviceName.swift; sourceTree = "<group>"; };
-		0417A8742315366D0094FC89 /* EnumFunctions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnumFunctions.swift; sourceTree = "<group>"; };
 		043FEF81230C1DFD007051EF /* libBlueSocket.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libBlueSocket.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		046FFFB122F9BDF8008C6466 /* libUITestHelpers.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libUITestHelpers.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		047BFA6422F178D700BB2E25 /* atsios.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = atsios.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -204,7 +202,6 @@
 		92C416C62473D9FF00A772AF /* Utils */ = {
 			isa = PBXGroup;
 			children = (
-				0417A8742315366D0094FC89 /* EnumFunctions.swift */,
 				0400C0A7231D145B004CD4C9 /* UIDeviceName.swift */,
 				9A907BBC234901DF00F3DE15 /* AppIcons.swift */,
 				2DFC38B02435ECC900E445DB /* sendLogs.swift */,
@@ -364,7 +361,6 @@
 				923AE15C245F008500156ECB /* Routeable.swift in Sources */,
 				D82C1C8F252F4A0E007D0313 /* UDPConnect.swift in Sources */,
 				D81F7E7B252DE7280091A02C /* HTTPServerManager.swift in Sources */,
-				0417A8752315366D0094FC89 /* EnumFunctions.swift in Sources */,
 				923AE1582459690400156ECB /* ScreenshotController.swift in Sources */,
 				923AE15024571FFB00156ECB /* DriverController.swift in Sources */,
 				0400C0A8231D145B004CD4C9 /* UIDeviceName.swift in Sources */,
