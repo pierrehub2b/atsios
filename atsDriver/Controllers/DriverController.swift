@@ -70,16 +70,16 @@ final class DriverController {
     }
     
     private struct DriverStartOutput: Encodable {
-        let os = Device.current.os
-        let driverVersion = Device.current.driverVersion
-        let systemName = Device.current.systemName
+        let os: String
+        let driverVersion: String
+        let systemName: String
 
-        let deviceWidth = Device.current.deviceWidth
-        let deviceHeight = Device.current.deviceHeight
-        let channelWidth = Device.current.channelWidth
-        let channelHeight = Device.current.channelHeight
-        let channelX = Device.current.channelX
-        let channelY = Device.current.channelY
+        let deviceWidth: Double
+        let deviceHeight: Double
+        let channelWidth: Double
+        let channelHeight: Double
+        let channelX: Int
+        let channelY: Int
         
         let systemProperties = Device.Property.allCases.map { $0.rawValue }
         let systemButtons = Device.Button.allCases.map { $0.rawValue }
@@ -87,13 +87,26 @@ final class DriverController {
         let token = UUID().uuidString
         
         let status = "0"
-        let screenCapturePort = Device.current.screenCapturePort
+        let screenCapturePort: Int
     }
     
     private func startHandler(userAgent: String) -> HttpResponse {
         continueExecution = true
              
-        let output = DriverStartOutput()
+        let currentDevice = Device.current
+        let output = DriverStartOutput(
+            os: currentDevice.os,
+            driverVersion: currentDevice.driverVersion,
+            systemName: currentDevice.systemName,
+            deviceWidth: currentDevice .deviceWidth,
+            deviceHeight: currentDevice.deviceHeight,
+            channelWidth: currentDevice.channelWidth,
+            channelHeight: currentDevice.channelHeight,
+            channelX: currentDevice.channelX,
+            channelY: currentDevice.channelY,
+            screenCapturePort: currentDevice.screenCapturePort
+        )
+        
         AtsClient.current = AtsClient(token: output.token, userAgent: userAgent, ipAddress: "")
         sendLogs(type: logType.STATUS, message: "** DEVICE LOCKED BY : \(AtsClient.current!.userAgent) **")
         
