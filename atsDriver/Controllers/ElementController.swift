@@ -47,13 +47,13 @@ final class ElementController {
         case press
     }
     
-    struct Output: Content {
+    struct ScriptingOutput: Encodable {
         let status: String
         let message: String?
         let error: String?
     }
     
-    struct ScriptingInput: Content {
+    struct ScriptingInput: Encodable {
         let script: String
         let frame: CGRect
     }
@@ -88,7 +88,7 @@ final class ElementController {
          self.resultElement["error"] = error.localizedDescription
          } */
         
-        return try! Router.Output(message: "scripting on element").toHttpResponse()
+        return Output(message: "scripting on element").toHttpResponse()
     }
     
     private func tapHandler(_ parameters: [String]) -> HttpResponse {
@@ -103,7 +103,7 @@ final class ElementController {
             let uiCoordinate = normalized.withOffset(CGVector(dx: xCoordinate, dy: yCoordinate))
             uiCoordinate.tap()
             
-            return try! Router.Output(message: "tap on element").toHttpResponse()
+            return Output(message: "tap on element").toHttpResponse()
         } catch {
             return .internalServerError
         }
@@ -116,7 +116,7 @@ final class ElementController {
     
     private func swipeHandler(_ parameters: [String]) -> HttpResponse {
         guard parameters.count > 5 else {
-            return try! Router.Output(message: "missing parameters").toHttpResponse()
+            return Output(message: "missing parameters").toHttpResponse()
         }
         
         let directionX = Double(parameters[3]) ?? 0.0
@@ -153,32 +153,32 @@ final class ElementController {
             
             center.press(forDuration: pressDuration, thenDragTo: direction == .vertical ? ySwipe : xSwipe)
             
-            return try! Router.Output(message: "swipe element").toHttpResponse()
+            return Output(message: "swipe element").toHttpResponse()
         } catch {
-            return try! Router.Output(message: "problem").toHttpResponse()
+            return Output(message: "problem").toHttpResponse()
         }
     }
     
     private func inputHandler(_ parameters: [String]) -> HttpResponse {
         guard parameters.count > 2 else {
-            return try! Router.Output(message: "missing parameters").toHttpResponse()
+            return Output(message: "missing parameters").toHttpResponse()
         }
         
         let text = parameters[2]
         if text == "&empty;" {
-            return try! Router.Output(message: "no keyboard on screen for tap text").toHttpResponse()
+            return Output(message: "no keyboard on screen for tap text").toHttpResponse()
         } else {
             if(application.keyboards.count > 0) {
                 application.typeText(text)
                 //sendLogs(type: logType.INFO, message: "Type text: \(text)")
-                return try! Router.Output(message: "element send keys : \(text)").toHttpResponse()
+                return Output(message: "element send keys : \(text)").toHttpResponse()
             } else {
-                return try! Router.Output(message: "no keyboard on screen for tap text").toHttpResponse()
+                return Output(message: "no keyboard on screen for tap text").toHttpResponse()
             }
         }
     }
     
-    private func press(duration: TimeInterval, paths: [String]) -> Content {
+    private func press(duration: TimeInterval, paths: [String]) -> HttpResponse {
         // let app = XCUIApplication(bundleIdentifier: "com.apple.mobilesafari")
         // app.activate()
         
@@ -200,7 +200,7 @@ final class ElementController {
         
         // startCoordinate.doubleTap()
         
-        return Router.Output(message: "ok")
+        return Output(message: "ok").toHttpResponse()
     }
     
     private func fetchCoordinates(_ parameters: [String]) throws -> CGPoint {

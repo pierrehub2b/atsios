@@ -53,7 +53,7 @@ class HTTPServerManager {
     
     func routeOnMain(_ routingCall:@escaping ((Swifter.HttpRequest) -> Swifter.HttpResponse)) -> ((Swifter.HttpRequest) -> Swifter.HttpResponse) {
         return { (request: HttpRequest) -> HttpResponse in
-            var response:HttpResponse = HttpResponse.internalServerError
+            var response: HttpResponse = HttpResponse.internalServerError
             DispatchQueue.main.sync {
                 response = routingCall(request)
             }
