@@ -91,74 +91,30 @@ final class ElementController {
         return Output(message: "scripting on element").toHttpResponse()
     }
     
+    
     private func tapHandler(_ parameters: [String]) -> HttpResponse {
-        let device = Device.current
+        let vector = ElementController.getVector(parameters)
+        application.coordinate(withNormalizedOffset: CGVector.zero).withOffset(vector).tap()
         
-        do {
-            let coordinate = try fetchCoordinates(parameters)
-            let xCoordinate = Double(coordinate.x) * device.deviceWidth / device.channelWidth
-            let yCoordinate = Double(coordinate.y) * device.deviceHeight / device.channelHeight
-            
-            let normalized = application.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0))
-            let uiCoordinate = normalized.withOffset(CGVector(dx: xCoordinate, dy: yCoordinate))
-            uiCoordinate.tap()
-            
-            return Output(message: "tap on element").toHttpResponse()
-        } catch {
-            return .internalServerError
-        }
+        return Output(message: "tap on element").toHttpResponse()
     }
-    
-    enum Direction {
-        case horizontal
-        case vertical
-    }
-    
+
     private func swipeHandler(_ parameters: [String]) -> HttpResponse {
-        guard parameters.count > 5 else {
-            return Output(message: "missing parameters").toHttpResponse()
-        }
+        let directionX = Double(parameters[2])!
+        let directionY = Double(parameters[3])!
         
-        let directionX = Double(parameters[3]) ?? 0.0
-        let directionY = Double(parameters[4]) ?? 0.0
-        let to = CGPoint(x: directionX, y: directionY)
+        let pressVector = ElementController.getVector(parameters)
+        let dragToVector = CGVector(dx: pressVector.dx + CGFloat(directionX), dy: pressVector.dy + CGFloat(directionY))
         
-        var direction:Direction
-        var adjustment: CGFloat = 0
-        if to.x > 0 {
-            direction = .horizontal
-            adjustment = 1
-        } else if to.x < 0 {
-            direction = .horizontal
-            adjustment = -1
-        } else if to.y < 0 {
-            direction = .vertical
-            adjustment = -1
-        } else {
-            direction = .vertical
-            adjustment = 1
-        }
-        
-        do {
-            let from = try fetchCoordinates(parameters)
-            
-            let device = Device.current
-            let halfX: CGFloat = CGFloat(Double(from.x) / device.channelWidth)
-            let halfY: CGFloat = CGFloat(Double(from.y) / device.channelHeight)
-            let pressDuration : TimeInterval = 0.1
-            
-            let center = application.coordinate(withNormalizedOffset: CGVector(dx: halfX, dy: halfY))
-            let ySwipe = application.coordinate(withNormalizedOffset: CGVector(dx: halfX, dy: halfY + adjustment))
-            let xSwipe = application.coordinate(withNormalizedOffset: CGVector(dx: halfX + adjustment, dy: halfY))
-            
-            center.press(forDuration: pressDuration, thenDragTo: direction == .vertical ? ySwipe : xSwipe)
-            
-            return Output(message: "swipe element").toHttpResponse()
-        } catch {
-            return Output(message: "problem").toHttpResponse()
-        }
+        let appCoordinate = application.coordinate(withNormalizedOffset: .zero)
+        let pressCoordinate = appCoordinate.withOffset(pressVector)
+        let dragToCoordinate = appCoordinate.withOffset(dragToVector)
+
+        pressCoordinate.press(forDuration: 0.1, thenDragTo: dragToCoordinate)
+
+        return Output(message: "swipe element").toHttpResponse()
     }
-    
+        
     private func inputHandler(_ parameters: [String]) -> HttpResponse {
         guard parameters.count > 2 else {
             return Output(message: "missing parameters").toHttpResponse()
@@ -203,37 +159,19 @@ final class ElementController {
         return Output(message: "ok").toHttpResponse()
     }
     
-    private func fetchCoordinates(_ parameters: [String]) throws -> CGPoint {
-        let coordinates = parameters.last!.split(separator: ";")
-                
-        let xCoordinates = Double(coordinates[0])!
-        let yCoordinates = Double(coordinates[1])!
-        let widthCoordinates = Double(coordinates[2])!
-        let heightCoordinates = Double(coordinates[3])!
+    private static func getVector(_ parameters: [String]) -> CGVector {
+        let offsetX = Double(parameters[0])!
+        let offsetY = Double(parameters[1])!
         
-        let rect = CGRect(x: xCoordinates, y: yCoordinates, width: widthCoordinates, height: heightCoordinates)
+        let values = parameters.last!.split(separator: ";")
+        let x = Double(values[0])!
+        let y = Double(values[1])!
+
+        let screenScale = Double(UIScreen.main.scale)
+        let vectorX = (x + offsetX) / screenScale
+        let vectorY = (y + offsetY) / screenScale
         
-        let elementX = Double(rect.origin.x)
-        let elementY = Double(rect.origin.y)
-        let elementHeight = Double(rect.height)
-        
-        var offSetX = 0.0
-        var offSetY = 0.0
-        
-        let offsetYShift = 33.0
-        
-        if (parameters.count == 3) {
-            offSetX = Double(parameters[0])!
-            offSetY = Double(parameters[1])! + offsetYShift
-            if (offSetY > elementHeight) {
-                offSetY = Double(parameters[1])!
-            }
-        }
-        
-        let calculateX = elementX + offSetX
-        let calculateY = elementY + offSetY
-        
-        return CGPoint(x: calculateX, y: calculateY)
+        return CGVector(dx: vectorX, dy: vectorY)
     }
 }
 
