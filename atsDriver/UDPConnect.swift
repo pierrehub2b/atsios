@@ -24,6 +24,7 @@ class UDPConnect {
     static let current = UDPConnect()
     
     private var imgView: Data!
+    private var socket: Socket!
     
     private let udpThread = DispatchQueue(label: "udpQueue" + UUID().uuidString, qos: .userInitiated)
     
@@ -34,10 +35,14 @@ class UDPConnect {
         }
     }
     
-    func udpStart() {
+    func stop() {
+        socket.close()
+    }
+    
+    private func udpStart() {
         do {
             var data = Data()
-            let socket = try Socket.create(family: .inet, type: .datagram, proto: .udp)
+            socket = try Socket.create(family: .inet, type: .datagram, proto: .udp)
             
             repeat {
                 let currentConnection = try socket.listen(forMessage: &data, on: Device.current.screenCapturePort)
@@ -52,7 +57,7 @@ class UDPConnect {
         }
     }
     
-    func addNewConnection(socket: Socket, currentConnection: (bytesRead: Int, address: Socket.Address?)) {
+    private func addNewConnection(socket: Socket, currentConnection: (bytesRead: Int, address: Socket.Address?)) {
         let bufferSize = 2000
         var offset = 0
         
@@ -65,7 +70,7 @@ class UDPConnect {
             workItem.wait()
             
             let img = self.imgView
-            if(img != nil) {
+            if (img != nil) {
                 repeat {
                     let thisChunkSize = ((img!.count - offset) > bufferSize) ? bufferSize : (img!.count - offset);
                     var chunk = img!.subdata(in: offset..<offset + thisChunkSize)
@@ -73,8 +78,8 @@ class UDPConnect {
                     let uint32Offset = UInt32(offset - thisChunkSize)
                     let uint32RemainingData = UInt32(img!.count - offset)
                     
-                    let offSetTable = self.toByteArrary(value: uint32Offset)
-                    let remainingDataTable = self.toByteArrary(value: uint32RemainingData)
+                    let offSetTable = UDPConnect.toByteArrary(value: uint32Offset)
+                    let remainingDataTable = UDPConnect.toByteArrary(value: uint32RemainingData)
                     
                     chunk.insert(contentsOf: offSetTable + remainingDataTable, at: 0)
                     
@@ -95,7 +100,7 @@ class UDPConnect {
         
     }
     
-    func refreshView() {
+    private func refreshView() {
         let device = Device.current
         UIGraphicsBeginImageContextWithOptions(CGSize(width: device.channelWidth, height: device.channelHeight), true, 0.60)
         XCUIScreen.main.screenshot().image.draw(in: CGRect(x: 0, y: 0, width: device.channelWidth, height: device.channelHeight))
@@ -105,7 +110,7 @@ class UDPConnect {
         self.imgView = (newImage ?? UIImage()).jpegData(compressionQuality: 0.2)
     }
     
-    func toByteArrary<T>(value: T)  -> [UInt8] where T: UnsignedInteger, T: FixedWidthInteger{
+    private static func toByteArrary<T>(value: T)  -> [UInt8] where T: UnsignedInteger, T: FixedWidthInteger{
         var bigEndian = value.bigEndian
         let count = MemoryLayout<T>.size
         let bytePtr = withUnsafePointer(to: &bigEndian) {

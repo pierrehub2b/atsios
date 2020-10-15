@@ -33,23 +33,25 @@ class HTTPServerManager {
             
             if let wifiAddress = getWiFiAddress() {
                 sendLogs(type: .status, message: "ATSDRIVER_DRIVER_HOST=\(wifiAddress):\(try! server.port())")
-                RunLoop.main.run()
             } else {
                 sendLogs(type: .status, message: "** WIFI NOT CONNECTED **")
             }
+            
+            print(try server.port())
+            RunLoop.main.run()
             
         } catch {
             print("Server start error: \(error)")
         }
     }
     
-    func stopServer() {
+    func stop() {
         server.stop()
     }
     
     private func registerRouteControllers() {
         controllers.append(AppController())
-        controllers.append(ButtonController())
+        controllers.append(ButtonController()) 
         controllers.append(CaptureController())
         controllers.append(DriverController())
         controllers.append(ElementController())
@@ -60,7 +62,7 @@ class HTTPServerManager {
         controllers.forEach { server.POST["/\($0.name)"] = routeOnMain($0.handleRoutes(_:)) }
     }
     
-    func routeOnMain(_ routingCall:@escaping ((Swifter.HttpRequest) -> Swifter.HttpResponse)) -> ((Swifter.HttpRequest) -> Swifter.HttpResponse) {
+    private func routeOnMain(_ routingCall:@escaping ((Swifter.HttpRequest) -> Swifter.HttpResponse)) -> ((Swifter.HttpRequest) -> Swifter.HttpResponse) {
         return { (request: HttpRequest) -> HttpResponse in
             var response: HttpResponse = HttpResponse.internalServerError
             DispatchQueue.main.sync {

@@ -19,10 +19,6 @@ import XCTest
 import Swifter
 import Socket
 
-enum ATSError: Error {
-    case start
-}
-
 var application: XCUIApplication!
 
 var continueExecution = true
@@ -37,7 +33,7 @@ class atsDriver: XCTestCase {
         
     override func setUpWithError() throws {
         guard let settingsFileURL = Bundle(for: atsDriver.self).url(forResource: "Settings", withExtension: "json") else {
-            throw ATSError.start
+            throw DriverError.start("Settings file not found")
         }
         
         let data = try Data(contentsOf: settingsFileURL)
@@ -52,11 +48,11 @@ class atsDriver: XCTestCase {
         }
         
         guard applications.isEmpty == false else {
-            throw ATSError.start
+            throw DriverError.start("Applications is empty")
         }
         
         Device.current.setApplications(applications)
-        
+                
         application = XCUIApplication()
     }
 
@@ -64,18 +60,19 @@ class atsDriver: XCTestCase {
         // Put teardown code here. This method is called after the invocation of each test method in the class.
            
         // Close if running
-        httpServer.stopServer()
+        httpServer.stop()
+        udpConnection.stop()
     }
 
-    func testRunner() throws {
+    func testRunner() {
         udpConnection.start()
-        httpServer.startServer(httpPort)        
+        httpServer.startServer(httpPort)
     }
     
-    func fetchSimulatorApps() throws -> [String] {
+    private func fetchSimulatorApps() throws -> [String] {
         guard let url = Bundle.main.url(forResource: "../../../../../Library/SpringBoard/IconState", withExtension: "plist"),
             let myDict = NSDictionary(contentsOf: url) as? [String:Any] else {
-            throw ATSError.start
+            throw DriverError.start("Plist file corrupted")
         }
         
         var appsInstalled = getAllAppIds(from: myDict)
@@ -88,7 +85,7 @@ class atsDriver: XCTestCase {
         return appsInstalled
     }
     
-    func getAllAppIds(from dic: [String: Any]) -> [String] {
+    private func getAllAppIds(from dic: [String: Any]) -> [String] {
         guard let iconLists = dic["iconLists"] as? [[Any]] else {
             return []
         }

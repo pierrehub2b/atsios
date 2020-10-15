@@ -23,10 +23,7 @@ extension CaptureController: Routeable {
     var name: String { return "capture" }
     
     func handleRoutes(_ request: HttpRequest) -> HttpResponse {
-        let response = fetchCaptureInfo()
-        print(response)
-        return response
-        // return fetchCaptureInfo()
+        return fetchCaptureInfo()
     }
 }
 

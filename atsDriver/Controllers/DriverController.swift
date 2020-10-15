@@ -83,13 +83,15 @@ final class DriverController {
         let os: String
         let driverVersion: String
         let systemName: String
+        let mobileName: String
+        let mobileUser = ""
+        let osBuild: String
+        let country: String
 
-        let deviceWidth: Double
-        let deviceHeight: Double
-        let channelWidth: Double
-        let channelHeight: Double
-        let channelX: Int
-        let channelY: Int
+        let deviceWidth: CGFloat
+        let deviceHeight: CGFloat
+        let channelWidth: CGFloat
+        let channelHeight: CGFloat
         
         let systemProperties = Device.Property.allCases.map { $0.rawValue }
         let systemButtons = Device.Button.allCases.map { $0.rawValue }
@@ -107,13 +109,14 @@ final class DriverController {
         let output = DriverStartOutput(
             os:                 currentDevice.os,
             driverVersion:      currentDevice.driverVersion,
-            systemName:         currentDevice.systemName,
+            systemName:         currentDevice.description,
+            mobileName:         currentDevice.name,
+            osBuild:            currentDevice.systemBuildNumber,
+            country:            currentDevice.systemCountry,
             deviceWidth:        currentDevice.deviceWidth,
             deviceHeight:       currentDevice.deviceHeight,
             channelWidth:       currentDevice.channelWidth,
             channelHeight:      currentDevice.channelHeight,
-            channelX:           currentDevice.channelX,
-            channelY:           currentDevice.channelY,
             screenCapturePort:  currentDevice.screenCapturePort
         )
         
@@ -164,7 +167,7 @@ final class DriverController {
         }
         
         let activity = getStateStringValue(rawValue: application.state.rawValue)
-        let info = DriverInfo(packageName: packageName, activity: activity, system: Device.current.systemName, label: application.label)
+        let info = DriverInfo(packageName: packageName, activity: activity, system: Device.current.description, label: application.label)
         
         do {
             let jsonData = try JSONEncoder().encode(info)
