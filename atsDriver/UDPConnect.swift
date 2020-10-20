@@ -85,29 +85,19 @@ class UDPConnect {
             let datagramSize = min(packetSize, frame.count - offSet)
             var datagram = frame.subdata(in: offSet..<offSet + datagramSize)
             
-            let uint32StartIndex = UInt32(offSet)
+            let offsetIndex = UInt32(offSet).toByteArray()
             
             offSet += datagramSize
-            let uint32RemainingData = UInt32(frame.count - offSet)
-
-            let offSetTable = toByteArray(value: uint32StartIndex)
-            let remainingDataTable = toByteArray(value: uint32RemainingData)
+            let remainingDataCount = UInt32(frame.count - offSet).toByteArray()
             
-            datagram.insert(contentsOf: offSetTable + remainingDataTable, at: 0)
+            datagram.insert(contentsOf: offsetIndex + remainingDataCount, at: 0)
             
             datagramArray.append(datagram)
             
         } while offSet < frame.count
                 
         connection.batch {
-            
-            datagramArray.forEach {
-                connection.send(content: $0, completion: NWConnection.SendCompletion.contentProcessed { error in
-                    if let error = error {
-                        print("Error : \(error.localizedDescription)")
-                    }
-                })
-            }
+            datagramArray.forEach { connection.send(content: $0, completion: NWConnection.SendCompletion.contentProcessed { _ in }) }
         }
         
         receive(on: connection)
@@ -124,10 +114,13 @@ class UDPConnect {
         
         return image?.jpegData(compressionQuality: 0.2)
     }
+}
+
+extension UInt32 {
     
-    private func toByteArray<T>(value: T)  -> [UInt8] where T: UnsignedInteger, T: FixedWidthInteger{
-        var bigEndian = value.bigEndian
-        let count = MemoryLayout<T>.size
+    func toByteArray() -> [UInt8] {
+        var bigEndian = self.bigEndian
+        let count = MemoryLayout<Self>.size
         let bytePtr = withUnsafePointer(to: &bigEndian) {
             $0.withMemoryRebound(to: UInt8.self, capacity: count) {
                 UnsafeBufferPointer(start: $0, count: count)
