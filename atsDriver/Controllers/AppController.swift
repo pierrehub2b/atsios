@@ -58,6 +58,10 @@ final class AppController {
         let label: String
         let icon: String = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+ip1sAAAAASUVORK5CYII="
         let version: String = "0.0.0"
+        let deviceHeight = Device.current.deviceHeight
+        let deviceWidth = Device.current.deviceWidth
+        let channelHeight = Device.current.channelHeight
+        let channelWidth = Device.current.channelWidth
     }
     
     private struct InfoOutput: Encodable {
@@ -76,17 +80,19 @@ final class AppController {
             return .internalServerError
         }
         
-        guard Device.current.applications.map({ $0.packageName }).contains(bundleIdentifier) else {
+        /* guard Device.current.applications.map({ $0.packageName }).contains(bundleIdentifier) else {
             sendLogs(type: .error, message: "Error on app launching: \(bundleIdentifier)")
             application = nil
             return Output(message: "app package not found : \(bundleIdentifier)", status: "-51").toHttpResponse()
-        }
+        } */
         
         sendLogs(type: .info, message: "Launching app \(bundleIdentifier)")
         
         application = XCUIApplication(bundleIdentifier: bundleIdentifier)
         application.launch()
-                  
+        
+        Device.current.setDeviceSize(size: application.windows.firstMatch.frame)
+        
         return StartOutput(label: application.label).toHttpResponse()
     }
     
@@ -100,6 +106,9 @@ final class AppController {
         application = XCUIApplication(bundleIdentifier: bundleIdentifier)
         application.terminate()
         application = nil
+        
+        AtsClient.current = nil
+        sendLogs(type: .status, message: "** DEVICE UNLOCKED **")
         
         return Output(message: "stop app \(bundleIdentifier)").toHttpResponse()
     }
